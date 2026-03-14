@@ -194,6 +194,21 @@
       color: var(--text);
     }
 
+    .mobile-menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-2);
+      cursor: pointer;
+      padding: 8px;
+      margin-right: 8px;
+      transition: color var(--ease);
+    }
+
+    .mobile-menu-toggle:hover {
+      color: var(--accent);
+    }
+
     .conn-status {
       display: flex;
       align-items: center;
@@ -1157,6 +1172,408 @@
       font-size: 10px;
       color: var(--text-3);
     }
+
+    /* ── Mobile Responsive ──────────────────────────────────────────────── */
+
+    /* Tablet & smaller */
+    @media (max-width: 1024px) {
+      .left {
+        width: 300px;
+      }
+
+      .art-scroll {
+        padding: 24px 28px;
+      }
+
+      .seo-side {
+        width: 220px;
+      }
+    }
+
+    /* Mobile landscape & smaller */
+    @media (max-width: 768px) {
+      html, body {
+        font-size: 15px; /* Increase base font size */
+      }
+
+      /* Header adjustments */
+      header {
+        height: 56px;
+        padding: 0 16px;
+      }
+
+      /* Show mobile menu toggle */
+      .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo {
+        position: static;
+        transform: none;
+        font-size: 13px;
+        gap: 8px;
+      }
+
+      .logo-mark {
+        width: 28px;
+        height: 28px;
+      }
+
+      .logo-mark img {
+        width: 28px;
+        height: 28px;
+      }
+
+      .theme-toggle {
+        padding: 4px 10px;
+        font-size: 10px;
+        margin-left: auto;
+      }
+
+      .conn-status {
+        display: none; /* Hide on mobile to save space */
+      }
+
+      /* Stack panels vertically */
+      .main {
+        flex-direction: column;
+      }
+
+      .left {
+        width: 100% !important; /* Override inline styles from resizer */
+        max-height: 50vh;
+        border-bottom: 2px solid var(--border);
+        flex-shrink: 0;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        overflow: hidden;
+      }
+
+      /* Collapsed state on mobile */
+      .left.mobile-collapsed {
+        max-height: 0;
+        opacity: 0;
+        border-bottom: none;
+        pointer-events: none;
+      }
+
+      /* Hide resizer on mobile */
+      .resizer {
+        display: none;
+      }
+
+      /* Form adjustments */
+      .form-wrap {
+        padding: 16px;
+      }
+
+      .eyebrow {
+        font-size: 11px;
+        margin-bottom: 12px;
+      }
+
+      label {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      textarea, select {
+        font-size: 15px; /* Prevent zoom on iOS */
+        padding: 10px 12px;
+      }
+
+      .btn {
+        padding: 12px 16px;
+        font-size: 15px;
+      }
+
+      /* Pipeline stages - horizontal scroll on mobile */
+      .pipeline {
+        padding: 10px 16px;
+        overflow-x: auto;
+      }
+
+      .stages {
+        min-width: max-content;
+      }
+
+      .stage {
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      /* Tone of Voice */
+      .tov-wrap {
+        min-height: 120px;
+      }
+
+      .tov-header {
+        padding: 10px 16px 8px;
+      }
+
+      .tov-title {
+        font-size: 13px;
+      }
+
+      .tov-textarea {
+        padding: 8px 16px 16px;
+        font-size: 14px;
+      }
+
+      /* Tooltip adjustments */
+      .tov-tooltip {
+        width: calc(100vw - 32px);
+        max-width: 320px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      /* Right panel */
+      .right {
+        flex: 1;
+        min-height: 50vh;
+      }
+
+      /* Article topbar */
+      .art-bar {
+        height: auto;
+        min-height: 48px;
+        padding: 10px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .job-chip {
+        font-size: 13px;
+        width: 100%;
+        order: -1;
+      }
+
+      .fetch-job-bar {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .fetch-job-input {
+        width: 100%;
+        min-width: 0;
+        font-size: 14px;
+        padding: 8px 12px;
+      }
+
+      .btn-fetch {
+        padding: 8px 14px;
+        font-size: 13px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .score-pill {
+        font-size: 12px;
+        padding: 4px 12px;
+      }
+
+      /* Article content */
+      .art-result {
+        flex-direction: column;
+      }
+
+      .art-scroll {
+        padding: 20px 16px;
+        order: 2;
+      }
+
+      /* Typography adjustments for mobile */
+      .art-scroll h1 {
+        font-size: 22px;
+        margin-bottom: 8px;
+      }
+
+      .art-scroll h2 {
+        font-size: 18px;
+        margin: 24px 0 10px;
+      }
+
+      .art-scroll h3 {
+        font-size: 16px;
+        margin: 18px 0 8px;
+      }
+
+      .art-scroll p {
+        font-size: 15px;
+        line-height: 1.75;
+        margin-bottom: 14px;
+      }
+
+      .art-scroll ul,
+      .art-scroll ol {
+        font-size: 15px;
+        padding-left: 24px;
+      }
+
+      /* SEO sidebar - move to top on mobile */
+      .seo-side {
+        width: 100%;
+        border-left: none;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+        order: 1;
+        max-height: none;
+      }
+
+      .meta-block {
+        margin-bottom: 12px;
+      }
+
+      .meta-lbl {
+        font-size: 10px;
+        margin-bottom: 8px;
+      }
+
+      .meta-val {
+        font-size: 13px;
+      }
+
+      /* Touch-friendly tags */
+      .tag {
+        font-size: 12px;
+        padding: 6px 12px;
+        margin: 2px;
+        min-height: 32px;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      /* Empty state */
+      .empty-glyph {
+        font-size: 32px;
+      }
+
+      .empty-h {
+        font-size: 16px;
+      }
+
+      .empty-s {
+        font-size: 13px;
+      }
+
+      /* Generating state */
+      .spinner {
+        width: 36px;
+        height: 36px;
+      }
+
+      .gen-label {
+        font-size: 15px;
+      }
+
+      .gen-sub {
+        font-size: 12px;
+      }
+    }
+
+    /* Small mobile (portrait phones) */
+    @media (max-width: 480px) {
+      header {
+        padding: 0 12px;
+        height: 52px;
+      }
+
+      .mobile-menu-toggle {
+        padding: 6px;
+        margin-right: 6px;
+      }
+
+      .mobile-menu-toggle svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .logo {
+        font-size: 12px;
+        gap: 6px;
+      }
+
+      .logo-mark {
+        width: 24px;
+        height: 24px;
+      }
+
+      .logo-mark img {
+        width: 24px;
+        height: 24px;
+      }
+
+      .theme-toggle {
+        font-size: 10px;
+        padding: 4px 8px;
+      }
+
+      .left {
+        max-height: 45vh;
+      }
+
+      .form-wrap {
+        padding: 14px;
+      }
+
+      .art-bar {
+        padding: 10px 12px;
+      }
+
+      .fetch-job-bar {
+        width: 100%;
+        order: 1;
+      }
+
+      .score-pill {
+        order: 2;
+      }
+
+      .art-scroll {
+        padding: 16px 12px;
+      }
+
+      .art-scroll h1 {
+        font-size: 20px;
+      }
+
+      .art-scroll h2 {
+        font-size: 17px;
+      }
+
+      .seo-side {
+        padding: 14px 12px;
+      }
+
+      /* Stack score display horizontally on very small screens */
+      .score-wrap {
+        flex-direction: row;
+        gap: 12px;
+      }
+
+      .score-svg {
+        width: 48px;
+        height: 48px;
+      }
+    }
+
+    /* Accessibility: Ensure touch targets are at least 44x44px */
+    @media (hover: none) and (pointer: coarse) {
+      .btn,
+      .theme-toggle,
+      .btn-fetch,
+      .tag {
+        min-height: 44px;
+      }
+
+      .tov-help-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 
@@ -1165,6 +1582,13 @@
 
     <!-- ── Header ──────────────────────────────────────────────────────────── -->
     <header>
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
       <div class="logo">
         <div class="logo-mark">
           <img src="/Lotus AI logo.png" alt="Lotus AI" />
@@ -1486,6 +1910,35 @@ Write: &quot;AI isn't just hype anymore. Companies like Shopify cut support cost
       } else {
         document.documentElement.setAttribute('data-theme', 'light');
         document.getElementById('themeBtn').innerHTML = '🌙 Dark';
+      }
+    }
+
+    /* ── Mobile Menu Toggle ────────────────────────────────────────────────── */
+    function toggleMobileMenu() {
+      const leftPanel = document.getElementById('leftPanel');
+      const toggleBtn = document.getElementById('mobileMenuToggle');
+      const isCollapsed = leftPanel.classList.contains('mobile-collapsed');
+
+      leftPanel.classList.toggle('mobile-collapsed');
+
+      // Update button icon
+      if (isCollapsed) {
+        // Show hamburger icon
+        toggleBtn.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        `;
+      } else {
+        // Show close icon
+        toggleBtn.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        `;
       }
     }
 
@@ -1914,6 +2367,9 @@ Write: &quot;AI isn't just hype anymore. Companies like Shopify cut support cost
       activateStage('output', true);
       document.getElementById('pipeline').classList.remove('show');
       document.getElementById('btnGen').disabled = false;
+
+      /* Auto-collapse left panel on mobile when result is shown */
+      setTimeout(checkMobileCollapse, 100);
     }
 
     function resetUI() {
@@ -1985,6 +2441,26 @@ Write: &quot;AI isn't just hype anymore. Companies like Shopify cut support cost
         parseInt(this.value).toLocaleString();
     });
 
+    /* ── Mobile: Auto-collapse panel on result ──────────────────────────────── */
+    function checkMobileCollapse() {
+      if (window.innerWidth <= 768) {
+        const resultVisible = document.getElementById('stResult').classList.contains('show');
+        const leftPanel = document.getElementById('leftPanel');
+        const toggleBtn = document.getElementById('mobileMenuToggle');
+
+        if (resultVisible && !leftPanel.classList.contains('mobile-collapsed')) {
+          leftPanel.classList.add('mobile-collapsed');
+          toggleBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          `;
+        }
+      }
+    }
+
     /* ── Boot ────────────────────────────────────────────────────────────── */
     show('empty');
     // Initial ping — update connection status indicator
@@ -2001,6 +2477,9 @@ Write: &quot;AI isn't just hype anymore. Companies like Shopify cut support cost
       }
     });
     if (!IS_AWS) connectSSE();
+
+    // Check if we should collapse panel on mobile
+    window.addEventListener('resize', checkMobileCollapse);
   </script>
 </body>
 
