@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/main.astro';
+import { DemoGrid } from '@/components/DemoGrid';
+import { motion } from 'framer-motion';
+---
+
+<Layout>
+	<section class="py-20 md:py-32">
+		<div class="container mx-auto px-4">
+			<div class="text-center space-y-4 mb-16">
+				<h1 class="text-4xl md:text-6xl font-bold">
+					<span class="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+						Interactive AI Demos
+					</span>
+				</h1>
+				<p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+					Explore our collection of production-ready AI solutions.
+					From SEO-optimized content generation to intelligent automation—experience the future of AI-powered tools.
+				</p>
+			</div>
+
+			<DemoGrid client:load />
+		</div>
+	</section>
+</Layout>

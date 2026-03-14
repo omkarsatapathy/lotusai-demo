@@ -1,0 +1,179 @@
+import { Github, Twitter, Linkedin, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { withBase } from "@/lib/utils";
+
+export function Footer() {
+  const currentYear = new Date().getFullYear();
+
+  return (
+    <footer className="border-t bg-muted/30">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          {/* Brand */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center w-8 h-8">
+                <img src="/Lotus AI logo.png" alt="Lotus AI" className="w-8 h-8 object-contain" />
+              </div>
+              <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                Lotus AI
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Senior AI/ML Engineer specializing in production-grade agentic systems and high-efficiency multimodal RAG
+            </p>
+            <div className="flex gap-3">
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Github className="h-5 w-5" />
+              </a>
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Core Projects */}
+          <div>
+            <h3 className="font-semibold mb-4">Core Projects</h3>
+            <ul className="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  AetherAI Multi-Agent
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  SEO Agent (LangGraph)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  VLM Fine-Tuning Pipeline
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Multimodal RAG Retrieval
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Experience */}
+          <div>
+            <h3 className="font-semibold mb-4">Experience</h3>
+            <ul className="space-y-3">
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Senior AI/ML Engineer - Okkular
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Data Scientist - Innovant
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Data Scientist - AKT Global
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Assistant Manager - JSW Steel
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Newsletter */}
+          <div>
+            <h3 className="font-semibold mb-4">Let's Build Something Intelligent.</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Interested in scaling LLM/VLM production? I'm currently based in Hyderabad, India and open to collaborating on complex AI architectures
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                placeholder="Briefly describe your project..."
+                className="flex h-9 w-full rounded-md border bg-background px-3 py-1 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <Button size="sm">
+                <Mail className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-muted-foreground">
+            © {currentYear} Omkar Satapathy. All rights reserved.
+          </p>
+          <div className="flex gap-6">
+            <a
+              href={withBase("/privacy")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href={withBase("/terms")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Terms of Service
+            </a>
+            <a
+              href={withBase("/privacy#cookies")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cookie Policy
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

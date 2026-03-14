@@ -1,0 +1,34 @@
+---
+import '../styles/global.css';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
+const { title = "Lotus AI Studio - Interactive Demos" } = Astro.props;
+---
+
+<html lang="en" class="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Explore production-ready AI solutions from Lotus AI Studio" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+		<title>{title}</title>
+		<script is:inline>
+			// Theme initialization
+			const theme = localStorage.getItem('theme') || 'dark';
+			if (theme === 'light') {
+				document.documentElement.classList.remove('dark');
+			} else {
+				document.documentElement.classList.add('dark');
+			}
+		</script>
+	</head>
+	<body>
+		<Header client:load />
+		<main>
+			<slot />
+		</main>
+		<Footer />
+	</body>
+</html>

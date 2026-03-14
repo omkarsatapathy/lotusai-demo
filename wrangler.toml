@@ -1,0 +1,16 @@
+name = "lotusai-demo"
+main = "dist/_worker.js/index.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "demo.lotusaistudio.com/*", zone_id = "9041d997241c480105ba9d932168b668" },
+  { pattern = "demo.lotusaistudio.com", zone_id = "9041d997241c480105ba9d932168b668" }
+]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+[vars]
+# Add your Cloudflare environment variables here
