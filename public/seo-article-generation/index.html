@@ -850,7 +850,7 @@
     }
 
     .art-result-wrap.show {
-      display: flex;
+      display: flex !important;
     }
 
     .art-result {
@@ -1193,7 +1193,7 @@
     /* Mobile landscape & smaller */
     @media (max-width: 768px) {
       html, body {
-        font-size: 15px; /* Increase base font size */
+        font-size: 16px; /* Prevent iOS auto-zoom */
       }
 
       /* Header adjustments */
@@ -1243,11 +1243,11 @@
 
       .left {
         width: 100% !important; /* Override inline styles from resizer */
-        max-height: 50vh;
+        max-height: 45vh;
         border-bottom: 2px solid var(--border);
         flex-shrink: 0;
         transition: max-height 0.3s ease, opacity 0.3s ease;
-        overflow: hidden;
+        overflow: auto;
       }
 
       /* Collapsed state on mobile */
@@ -1279,13 +1279,14 @@
       }
 
       textarea, select {
-        font-size: 15px; /* Prevent zoom on iOS */
+        font-size: 16px; /* Prevent zoom on iOS - must be 16px minimum */
         padding: 10px 12px;
       }
 
       .btn {
         padding: 12px 16px;
-        font-size: 15px;
+        font-size: 16px; /* Prevent zoom on iOS - must be 16px minimum */
+        min-height: 48px; /* Ensure touch target */
       }
 
       /* Pipeline stages - horizontal scroll on mobile */
@@ -1332,7 +1333,25 @@
       /* Right panel */
       .right {
         flex: 1;
-        min-height: 50vh;
+        min-height: 55vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Ensure article body takes full space */
+      .art-body {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .art-main {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
 
       /* Article topbar */
@@ -1358,15 +1377,16 @@
       .fetch-job-input {
         width: 100%;
         min-width: 0;
-        font-size: 14px;
+        font-size: 16px; /* Prevent zoom on iOS */
         padding: 8px 12px;
       }
 
       .btn-fetch {
         padding: 8px 14px;
-        font-size: 13px;
+        font-size: 14px;
         white-space: nowrap;
         flex-shrink: 0;
+        min-height: 40px;
       }
 
       .score-pill {
@@ -1377,11 +1397,19 @@
       /* Article content */
       .art-result {
         flex-direction: column;
+        flex: 1;
+        overflow-y: scroll; /* Force scrollbar to show scrollable area */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
       }
 
       .art-scroll {
         padding: 20px 16px;
+        padding-bottom: 60px; /* Extra padding at bottom for comfortable reading */
         order: 2;
+        flex: none; /* Don't flex, just take natural height */
+        overflow-y: visible; /* Remove nested scroll */
+        min-height: 100vh; /* Ensure article takes full viewport height */
+        background: var(--surface);
       }
 
       /* Typography adjustments for mobile */
@@ -1401,25 +1429,69 @@
       }
 
       .art-scroll p {
-        font-size: 15px;
+        font-size: 16px;
         line-height: 1.75;
         margin-bottom: 14px;
       }
 
       .art-scroll ul,
       .art-scroll ol {
-        font-size: 15px;
+        font-size: 16px;
         padding-left: 24px;
+      }
+
+      /* Ensure article result wrapper is visible */
+      .art-result-wrap.show {
+        display: flex !important;
+        flex: 1;
+        overflow: hidden; /* Container doesn't scroll, art-result does */
+      }
+
+      /* Ensure empty and generating states are hidden when result shows */
+      .art-result-wrap.show ~ .empty,
+      .art-result-wrap.show ~ .gen-state {
+        display: none !important;
       }
 
       /* SEO sidebar - move to top on mobile */
       .seo-side {
         width: 100%;
         border-left: none;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 2px solid var(--border);
         padding: 16px;
+        padding-bottom: 20px;
         order: 1;
-        max-height: none;
+        max-height: none; /* Let it take natural height */
+        overflow-y: visible; /* No separate scroll */
+        flex-shrink: 0;
+        position: relative;
+      }
+
+      /* Add visual indicator that content continues below */
+      .seo-side::after {
+        content: "↓ Scroll down to read the full article ↓";
+        display: block;
+        text-align: center;
+        font-size: 12px;
+        color: var(--accent);
+        margin-top: 16px;
+        padding: 10px;
+        background: var(--accent-dim);
+        border: 1px solid var(--accent-glow);
+        border-radius: 6px;
+        font-weight: 600;
+        animation: pulse-border 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse-border {
+        0%, 100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        50% {
+          opacity: 0.7;
+          transform: translateY(2px);
+        }
       }
 
       .meta-block {
@@ -1511,11 +1583,20 @@
       }
 
       .left {
-        max-height: 45vh;
+        max-height: 40vh;
       }
 
       .form-wrap {
         padding: 14px;
+      }
+
+      textarea, select {
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+
+      .btn {
+        font-size: 16px; /* Prevent zoom on iOS */
+        min-height: 48px;
       }
 
       .art-bar {
@@ -1562,16 +1643,28 @@
     /* Accessibility: Ensure touch targets are at least 44x44px */
     @media (hover: none) and (pointer: coarse) {
       .btn,
+      .btn-primary,
       .theme-toggle,
       .btn-fetch,
       .tag {
-        min-height: 44px;
+        min-height: 48px;
       }
 
       .tov-help-btn {
-        width: 24px;
-        height: 24px;
-        font-size: 11px;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+      }
+
+      /* Prevent iOS zoom on inputs */
+      input, textarea, select {
+        font-size: 16px !important;
+      }
+
+      /* Ensure generate button is tappable */
+      .btn-primary {
+        -webkit-tap-highlight-color: rgba(168, 85, 247, 0.3);
+        touch-action: manipulation;
       }
     }
   </style>
