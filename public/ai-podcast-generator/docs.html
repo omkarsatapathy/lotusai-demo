@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Podcast Generator — Technical Deep Dive | Lotus AI</title>
+  <link rel="icon" type="image/png" href="/Lotus%20AI%20logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07090f;
+      --surface: #0d1117;
+      --surface-2: #131920;
+      --surface-3: #1a2230;
+      --border: #1e2a3a;
+      --border-2: #253040;
+      --accent: #a855f7;
+      --accent-dim: rgba(168, 85, 247, 0.18);
+      --accent-glow: rgba(168, 85, 247, 0.35);
+      --teal: #ec4899;
+      --teal-dim: rgba(236, 72, 153, 0.15);
+      --text: #dde6f4;
+      --text-2: #8b9ab5;
+      --text-3: #445066;
+      --r: 8px;
+      --ease: 200ms ease;
+    }
+
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --surface-3: #f4f4f8;
+      --border: #e1e4e8;
+      --border-2: #d0d7de;
+      --accent: #a855f7;
+      --accent-dim: rgba(168, 85, 247, 0.08);
+      --accent-glow: rgba(168, 85, 247, 0.15);
+      --teal: #ec4899;
+      --teal-dim: rgba(236, 72, 153, 0.1);
+      --text: #111827;
+      --text-2: #374151;
+      --text-3: #6b7280;
+    }
+
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 12px; }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-3);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: color var(--ease);
+    }
+    .back-link:hover { color: var(--accent); }
+    .back-link svg { width: 14px; height: 14px; }
+
+    .sep { color: var(--border-2); font-size: 16px; }
+
+    .breadcrumb-current {
+      font-size: 13px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      background: linear-gradient(to right, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo img { width: 28px; height: 28px; object-fit: contain; }
+
+    .theme-toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color var(--ease), background var(--ease);
+      color: var(--text-2);
+    }
+    .theme-toggle:hover {
+      border-color: rgba(168, 85, 247, 0.5);
+      background: var(--surface-2);
+    }
+    .theme-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Blob float animation ── */
+    @keyframes blob-float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(40px, -60px) scale(1.08); }
+      66%       { transform: translate(-30px, 30px) scale(0.92); }
+    }
+    .blob {
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(72px);
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: -1;
+      animation: blob-float 5.4s ease-in-out infinite;
+    }
+    .blob-1 { top: -60px; left: -80px;  background: #f9a8c9; animation-delay: 0s; }
+    .blob-2 { top: -40px; right: -80px; background: #c4b5fd; animation-delay: 2s; }
+    .blob-3 { top: 140px; left: 33%;    background: #ffc59a; animation-delay: 4s; }
+
+    [data-theme="light"] .blob { mix-blend-mode: multiply; }
+    [data-theme="dark"]  .blob { mix-blend-mode: soft-light; opacity: 0.3; }
+
+    /* ── Main layout ── */
+    .page-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+    }
+
+    /* ── Hero ── */
+    .hero { margin-bottom: 56px; }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      border-radius: 20px;
+      padding: 4px 12px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .hero h1 .grad {
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 1rem;
+      color: var(--text-2);
+      max-width: 620px;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-2);
+      background: var(--surface-2);
+      color: var(--text-2);
+    }
+    .badge.purple { border-color: rgba(168,85,247,0.4); color: #a855f7; background: rgba(168,85,247,0.07); }
+    .badge.pink { border-color: rgba(236,72,153,0.4); color: #ec4899; background: rgba(236,72,153,0.07); }
+    .badge.blue { border-color: rgba(59,130,246,0.4); color: #3b82f6; background: rgba(59,130,246,0.07); }
+    .badge.green { border-color: rgba(34,197,94,0.4); color: #22c55e; background: rgba(34,197,94,0.07); }
+    .badge.orange { border-color: rgba(249,115,22,0.4); color: #f97316; background: rgba(249,115,22,0.07); }
+    .badge.cyan { border-color: rgba(6,182,212,0.4); color: #06b6d4; background: rgba(6,182,212,0.07); }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 52px;
+    }
+    .toc-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+      margin-bottom: 12px;
+    }
+    .toc ol { padding-left: 18px; }
+    .toc li { margin: 6px 0; }
+    .toc a {
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 13.5px;
+      transition: color var(--ease);
+    }
+    .toc a:hover { color: var(--accent); }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 52px;
+      padding-bottom: 52px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .section-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      border-radius: 6px;
+      padding: 2px 8px;
+      letter-spacing: 0.05em;
+    }
+    .section h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .section p, .section li {
+      color: var(--text-2);
+      line-height: 1.75;
+      font-size: 14.5px;
+    }
+    .section ul, .section ol {
+      padding-left: 20px;
+      margin: 10px 0;
+    }
+    .section li { margin: 5px 0; }
+    .section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 24px 0 10px;
+    }
+
+    /* ── Architecture Diagram ── */
+    .arch-diagram {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      overflow-x: auto;
+    }
+
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      min-width: 360px;
+    }
+
+    .pipeline-input {
+      background: var(--surface-3);
+      border: 1.5px dashed var(--border-2);
+      border-radius: 10px;
+      padding: 10px 24px;
+      font-size: 12.5px;
+      color: var(--text-3);
+      font-weight: 500;
+      font-family: 'Courier New', monospace;
+    }
+
+    .arrow-down {
+      color: var(--text-3);
+      font-size: 18px;
+      line-height: 1.2;
+      margin: 2px 0;
+    }
+
+    .pipe-node {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--border-2);
+      border-radius: 10px;
+      padding: 10px 20px;
+      min-width: 280px;
+      transition: border-color var(--ease);
+    }
+    .pipe-node:hover { border-color: var(--accent); }
+    .pipe-node .node-icon { font-size: 16px; }
+    .pipe-node .node-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+    }
+    .pipe-node .node-type {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .react-type { background: rgba(168,85,247,0.12); color: #a855f7; }
+    .seq-type   { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .fn-type    { background: rgba(34,197,94,0.12);  color: #22c55e; }
+    .dsp-type   { background: rgba(249,115,22,0.12); color: #f97316; }
+    .tts-type   { background: rgba(6,182,212,0.12);  color: #06b6d4; }
+
+    .pipe-node.accent-border { border-color: var(--accent); }
+
+    /* ── Phase boxes ── */
+    .phase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    @media (max-width: 540px) {
+      .phase-grid { grid-template-columns: 1fr; }
+    }
+
+    .phase-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .phase-box .phase-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .phase-box .phase-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .phase-box .phase-desc {
+      font-size: 12px;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+    .phase-box.highlight {
+      border-color: rgba(168,85,247,0.4);
+      background: var(--accent-dim);
+    }
+    .phase-box.full { grid-column: 1 / -1; }
+
+    /* ── Tables ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+    .data-table th {
+      background: var(--surface-3);
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-2);
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--surface-2); }
+    .data-table .mono { font-family: 'Courier New', monospace; font-size: 12px; color: var(--accent); }
+
+    /* ── Code block ── */
+    .code-block {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin: 16px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      color: var(--text-2);
+      line-height: 1.65;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .code-block .c-kw  { color: #ec4899; }
+    .code-block .c-str { color: #22c55e; }
+    .code-block .c-num { color: #f59e0b; }
+    .code-block .c-cmt { color: var(--text-3); font-style: italic; }
+    .code-block .c-fn  { color: #a855f7; }
+
+    /* ── Flow arrow box ── */
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+    .flow-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 13px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .flow-box.accent { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .flow-arrow { color: var(--text-3); font-size: 14px; }
+
+    /* ── Callout box ── */
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-dim);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 13.5px;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+    .callout strong { color: var(--accent); }
+
+    /* ── Design principle cards ── */
+    .principle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    @media (max-width: 540px) { .principle-grid { grid-template-columns: 1fr; } }
+
+    .principle-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .principle-card .pc-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 6px;
+    }
+    .principle-card .pc-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .principle-card .pc-desc {
+      font-size: 12.5px;
+      color: var(--text-3);
+      line-height: 1.55;
+    }
+
+    /* ── Tech stack chips ── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .stack-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      transition: border-color var(--ease);
+    }
+    .stack-item:hover { border-color: var(--accent); }
+    .stack-item .si-layer {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-3);
+      margin-bottom: 4px;
+    }
+    .stack-item .si-tech {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .stack-item .si-role {
+      font-size: 11.5px;
+      color: var(--text-3);
+      line-height: 1.45;
+    }
+
+    /* ── Diagram image ── */
+    .diagram-img {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin: 16px 0;
+    }
+
+    /* ── Download CTA ── */
+    .download-section {
+      background: linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(236,72,153,0.08) 100%);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin-top: 52px;
+    }
+    .download-section h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .download-section p {
+      font-size: 13.5px;
+      color: var(--text-2);
+      margin-bottom: 22px;
+    }
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      color: #ffffff;
+      text-decoration: none;
+      transition: opacity var(--ease), box-shadow var(--ease);
+      box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+      cursor: pointer;
+      border: none;
+    }
+    .btn-download:hover { opacity: 0.9; box-shadow: 0 6px 28px rgba(168,85,247,0.45); }
+
+    /* responsive */
+    @media (max-width: 640px) {
+      .page-wrap { padding: 40px 16px 60px; }
+      header { padding: 0 16px; }
+      .logo { display: none; }
+      .phase-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <a href="/" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </a>
+      <span class="sep">/</span>
+      <span class="breadcrumb-current">Technical Deep Dive</span>
+    </div>
+
+    <div class="logo">
+      <img src="/Lotus%20AI%20logo.png" alt="Lotus AI" />
+      Lotus AI
+    </div>
+
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="icon-sun"  viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </header>
+
+  <div class="page-wrap">
+
+    <!-- Hero -->
+    <div class="hero" style="position:relative;overflow:visible;">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+
+      <div class="hero-eyebrow">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Technical Documentation
+      </div>
+      <h1>AI Podcast Generator<br/><span class="grad">System Architecture</span></h1>
+      <p class="hero-subtitle">
+        A fully autonomous, 5-phase LangGraph pipeline that transforms any topic into a
+        production-ready podcast episode — complete with AI-generated dialogue, multi-speaker
+        TTS voice synthesis, conversational overlap mixing, and broadcast-grade audio mastering.
+      </p>
+      <div class="badge-row">
+        <span class="badge purple">LangGraph</span>
+        <span class="badge pink">FastAPI</span>
+        <span class="badge blue">GPT-4</span>
+        <span class="badge cyan">Gemini 2.5 Pro TTS</span>
+        <span class="badge green">FAISS</span>
+        <span class="badge orange">Sentence-Transformers</span>
+        <span class="badge purple">pydub + ffmpeg</span>
+        <span class="badge green">AWS Lambda</span>
+      </div>
+    </div>
+
+    <!-- TOC -->
+    <div class="toc">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#overview">Project Overview</a></li>
+        <li><a href="#architecture">5-Phase Pipeline Architecture</a></li>
+        <li><a href="#phase1">Phase 1 — Research &amp; Ingestion</a></li>
+        <li><a href="#phase2">Phase 2 — Content Planning</a></li>
+        <li><a href="#phase3">Phase 3 — Dialogue Generation</a></li>
+        <li><a href="#phase4">Phase 4 — Voice Synthesis</a></li>
+        <li><a href="#phase5">Phase 5 — Audio Post-Processing</a></li>
+        <li><a href="#memory">In-Memory Processing Architecture</a></li>
+        <li><a href="#stack">Tech Stack</a></li>
+        <li><a href="#design">Design Decisions</a></li>
+      </ol>
+    </div>
+
+    <!-- 1. Overview -->
+    <div class="section" id="overview">
+      <div class="section-label"><span class="section-num">01</span></div>
+      <h2>Project Overview</h2>
+      <p>
+        The AI Podcast Generator is an autonomous system that converts any topic into a fully
+        produced podcast episode through a <strong>5-phase, 30+ node LangGraph pipeline</strong>.
+        From web research to final MP3 export, every step is orchestrated by specialized AI agents
+        with no human intervention required.
+      </p>
+
+      <h3>End-to-end flow</h3>
+      <div class="flow-row">
+        <div class="flow-box accent">Topic</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Research</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Plan</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Script</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Voice</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Master</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box accent">MP3</div>
+      </div>
+
+      <ul>
+        <li><strong>Researches the web:</strong> generates 10 diverse search queries via a ReAct agent, scrapes ~100 sources, deduplicates with FAISS</li>
+        <li><strong>Plans the episode:</strong> creates chapter outlines, designs 2–3 speaker personas with distinct voices and speaking styles</li>
+        <li><strong>Writes dialogue:</strong> beat-by-beat script generation with naturalness markers, fact-checking, QA review, and SSML annotation</li>
+        <li><strong>Synthesizes voices:</strong> Gemini 2.5 Pro TTS with parallel synthesis, audio quality gates, and auto-repair</li>
+        <li><strong>Masters audio:</strong> conversational overlap mixing, broadcast EQ/compression, loudness normalization to -16 LUFS, cold open generation, and final MP3 assembly with ID3 metadata</li>
+      </ul>
+
+      <div class="callout">
+        <strong>Zero databases, zero temp files.</strong> The entire pipeline runs in-memory within a single
+        AWS Lambda invocation (~210 MB RAM). This architecture decision yields 40% faster execution and
+        $0.0003 per podcast vs $0.0009 with vector DB alternatives.
+      </div>
+    </div>
+
+    <!-- 2. Architecture -->
+    <div class="section" id="architecture">
+      <div class="section-label"><span class="section-num">02</span></div>
+      <h2>5-Phase Pipeline Architecture</h2>
+      <p>The system is built as a <strong>LangGraph StateGraph</strong> with 5 sequential phases, each implemented as a subgraph with its own nodes, conditional routing, retry logic, and quality gates.</p>
+
+      <div class="arch-diagram">
+        <div class="pipeline">
+          <div class="pipeline-input">INPUT { topic, preferences }</div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">🔍</span>
+            <span class="node-label">PHASE 1 — Research &amp; Ingestion</span>
+            <span class="node-type react-type">ReAct</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">📋</span>
+            <span class="node-label">PHASE 2 — Content Planning</span>
+            <span class="node-type seq-type">Sequential</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">🎭</span>
+            <span class="node-label">PHASE 3 — Dialogue Generation</span>
+            <span class="node-type react-type">6 Nodes</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">🎙️</span>
+            <span class="node-label">PHASE 4 — Voice Synthesis</span>
+            <span class="node-type tts-type">Gemini TTS</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">🎚️</span>
+            <span class="node-label">PHASE 5 — Audio Post-Processing</span>
+            <span class="node-type dsp-type">DSP</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipeline-input">OUTPUT { podcast_episode_final.mp3 }</div>
+        </div>
+      </div>
+
+      <img src="/ai-podcast-generator/pipeline_graph.png" alt="Full LangGraph Pipeline" class="diagram-img" />
+      <p style="font-size:12px;color:var(--text-3);text-align:center;margin-top:4px;">Complete LangGraph node topology across all 5 phases</p>
+    </div>
+
+    <!-- 3. Phase 1 -->
+    <div class="section" id="phase1">
+      <div class="section-label"><span class="section-num">03</span></div>
+      <h2>Phase 1 — Research &amp; Ingestion</h2>
+      <p>Phase 1 transforms a raw topic into a ranked corpus of deduplicated, relevance-scored content chunks ready for script generation.</p>
+
+      <h3>Query Producer Agent</h3>
+      <p>A <strong>ReAct-style agent</strong> with 4 tools generates 10 diverse search queries using a freshness-aware routing strategy:</p>
+      <ul>
+        <li><strong>Freshness Classifier:</strong> determines if the topic is "recent" (needs live data) or "evergreen" (LLM-sufficient)</li>
+        <li><strong>Recent path:</strong> performs seed search → extracts entities/dates → generates date-aware queries (~20–30s)</li>
+        <li><strong>Evergreen path:</strong> direct LLM generation of diverse angle queries (~5–10s)</li>
+        <li><strong>Date-aware tagging:</strong> appends temporal qualifiers to ensure freshness</li>
+      </ul>
+
+      <table class="data-table">
+        <thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">web_search</td><td>Google Custom Search API — fetches SERP results</td></tr>
+          <tr><td class="mono">web_fetch</td><td>Scrapes full page content with Trafilatura</td></tr>
+          <tr><td class="mono">get_current_date</td><td>Provides current date for temporal query tagging</td></tr>
+          <tr><td class="mono">classify_freshness</td><td>Routes topic through recent vs evergreen path</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Deduplication &amp; Relevance Scoring</h3>
+      <p>~100 scraped documents are processed entirely in memory:</p>
+      <div class="code-block"><span class="c-cmt"># In-memory processing pipeline</span>
+merged_text (<span class="c-fn">str</span>)
+    → chunks (<span class="c-fn">List[Dict]</span>)           <span class="c-cmt"># ~200 items, 500-word segments</span>
+    → embeddings (<span class="c-fn">np.ndarray</span>)       <span class="c-cmt"># Shape: (200, 384)</span>
+    → faiss_index (<span class="c-fn">IndexFlatIP</span>)     <span class="c-cmt"># Cosine similarity dedup</span>
+    → unique_chunks (<span class="c-fn">List[Dict]</span>)    <span class="c-cmt"># ~100-150 after dedup</span>
+    → ranked_chunks (<span class="c-fn">List[Dict]</span>)    <span class="c-cmt"># Top 60 by cross-encoder</span>
+    → state[<span class="c-str">"ranked_chunks"</span>]       <span class="c-cmt"># Passed to Phase 2</span></div>
+    </div>
+
+    <!-- 4. Phase 2 -->
+    <div class="section" id="phase2">
+      <div class="section-label"><span class="section-num">04</span></div>
+      <h2>Phase 2 — Content Planning</h2>
+      <p>Phase 2 transforms ranked research chunks into a structured episode plan with chapter outlines and fully realized speaker personas.</p>
+
+      <h3>Chapter Planner</h3>
+      <p>Creates a multi-chapter episode structure with acts (setup → conflict → resolution), energy arcs, key points per chapter, source chunk assignments, and transition hooks between chapters.</p>
+
+      <h3>Character Designer Agent</h3>
+      <p>Designs 2–3 speaker personas per episode with detailed attributes:</p>
+      <ul>
+        <li><strong>Persona schema:</strong> name, role (host/expert/skeptic), speaking style, vocabulary level, catchphrases</li>
+        <li><strong>Voice bank:</strong> 10 curated Gemini 2.5 Pro TTS voices mapped to persona archetypes</li>
+        <li><strong>Single LLM call:</strong> all personas generated in one structured output call — no iterative refinement needed</li>
+        <li><strong>Chapter context:</strong> personas are designed with awareness of the episode's topic and chapter structure</li>
+      </ul>
+
+      <div class="callout">
+        <strong>Why single-call persona design?</strong> Multi-turn persona refinement risks
+        personality drift between iterations. A single structured output call produces internally
+        consistent characters with complementary dynamics (e.g., curious host vs. authoritative expert).
+      </div>
+    </div>
+
+    <!-- 5. Phase 3 -->
+    <div class="section" id="phase3">
+      <div class="section-label"><span class="section-num">05</span></div>
+      <h2>Phase 3 — Dialogue Generation</h2>
+      <p>The creative heart of the pipeline. Phase 3 is a <strong>6-node LangGraph subgraph</strong> that transforms chapter outlines into SSML-annotated dialogue scripts.</p>
+
+      <table class="data-table">
+        <thead><tr><th>Node</th><th>Role</th><th>Key Behavior</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Dialogue Engine</strong></td>
+            <td>Script writer</td>
+            <td>Beat-by-beat generation (5 beats/chapter) with context continuity</td>
+          </tr>
+          <tr>
+            <td><strong>Expert Expander</strong></td>
+            <td>Content enrichment</td>
+            <td>Expands expert utterances with detailed explanations while maintaining conversational flow</td>
+          </tr>
+          <tr>
+            <td><strong>Naturalness Injector</strong></td>
+            <td>Human-like speech</td>
+            <td>Injects 7 marker types: <code>[FILLER:*]</code>, <code>[PAUSE:*]</code>, <code>[EMPHASIS:*]</code>, <code>[PACE:*]</code>, <code>[LAUGH:*]</code>, <code>[INTERRUPT:*]</code>, <code>[BACKCHANNEL:*]</code></td>
+          </tr>
+          <tr>
+            <td><strong>Fact Checker</strong></td>
+            <td>Verification</td>
+            <td>Validates claims against source chunks using grounding + semantic similarity</td>
+          </tr>
+          <tr>
+            <td><strong>QA Reviewer</strong></td>
+            <td>Quality gate</td>
+            <td>Scores engagement, repetition, clarity, transitions, and energy arc compliance</td>
+          </tr>
+          <tr>
+            <td><strong>SSML Annotator</strong></td>
+            <td>TTS preparation</td>
+            <td>Converts naturalness markers into Google Cloud TTS-compatible SSML with prosody control</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Beat-by-beat, not monolithic.</strong> Each chapter is divided into 5 narrative beats
+        generated sequentially. This prevents context window overflow, maintains energy arc control,
+        and allows the QA reviewer to catch issues at a granular level before they propagate.
+      </div>
+    </div>
+
+    <!-- 6. Phase 4 -->
+    <div class="section" id="phase4">
+      <div class="section-label"><span class="section-num">06</span></div>
+      <h2>Phase 4 — Voice Synthesis</h2>
+      <p>Phase 4 converts SSML-annotated scripts into per-utterance WAV files using <strong>Gemini 2.5 Pro TTS</strong> as the primary engine, implemented as an 8-step LangGraph subgraph.</p>
+
+      <div class="phase-grid">
+        <div class="phase-box">
+          <span class="phase-icon">1️⃣</span>
+          <div class="phase-title">Contract Validation</div>
+          <div class="phase-desc">Validates Phase 3 output: SSML structure, speaker metadata, chapter completeness</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">2️⃣</span>
+          <div class="phase-title">Voice Assignment</div>
+          <div class="phase-desc">Fixed speaker-to-voice mapping for entire episode with similarity-based fallback</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">3️⃣</span>
+          <div class="phase-title">Utterance Normalization</div>
+          <div class="phase-desc">Punctuation-aware splitting for oversized utterances; sub-ID lineage tracking</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">4️⃣</span>
+          <div class="phase-title">Gemini Request Routing</div>
+          <div class="phase-desc">Constructs provider-optimized payloads with character/token guards</div>
+        </div>
+        <div class="phase-box highlight">
+          <span class="phase-icon">5️⃣</span>
+          <div class="phase-title">Parallel Synthesis</div>
+          <div class="phase-desc">Bounded concurrency with exponential backoff on 429/503; QPS-safe execution</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">6️⃣</span>
+          <div class="phase-title">Audio Quality Gate</div>
+          <div class="phase-desc">Technical QC on generated clips with selective auto-repair for failed segments</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">7️⃣</span>
+          <div class="phase-title">Chapter Manifest</div>
+          <div class="phase-desc">Builds ordered clip registry with durations, speaker metadata, timing directives</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">8️⃣</span>
+          <div class="phase-title">Phase 5 Handoff</div>
+          <div class="phase-desc">Packages WAV clips + timing metadata + voice map into Phase 5 input contract</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Voice consistency is non-negotiable.</strong> Voice identity is fixed per speaker for the
+        entire episode. Any fallback voice must be pre-mapped by similarity profile and logged.
+        Listeners detect voice changes instantly — even subtle ones break immersion.
+      </div>
+    </div>
+
+    <!-- 7. Phase 5 -->
+    <div class="section" id="phase5">
+      <div class="section-label"><span class="section-num">07</span></div>
+      <h2>Phase 5 — Audio Post-Processing</h2>
+      <p>Phase 5 is almost entirely pure <strong>audio DSP</strong> — no LLMs except one lightweight script-scan call. It transforms raw utterance WAVs into a broadcast-ready podcast episode.</p>
+
+      <div class="phase-grid">
+        <div class="phase-box highlight">
+          <span class="phase-icon">🔊</span>
+          <div class="phase-title">Audio Overlap Engine</div>
+          <div class="phase-desc">Mixes clips with conversational overlaps using INTERRUPT/BACKCHANNEL/LAUGH timing directives. Adds 50–100ms cross-fades between speaker turns. Backchannels mixed at -8dB.</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">🎛️</span>
+          <div class="phase-title">Audio Post-Processor</div>
+          <div class="phase-desc">Professional mastering chain: noise gate (-40dB), EQ (2–5kHz presence boost, sub-100Hz cut), 2:1 compression, loudness normalization to -16 LUFS (Spotify/Apple standard).</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">🎬</span>
+          <div class="phase-title">Cold Open Generator</div>
+          <div class="phase-desc">LLM (Claude Haiku) scans the full script to identify the most compelling 15–30s moment, then extracts the corresponding audio slice as the episode hook.</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">📦</span>
+          <div class="phase-title">Chapter Stitcher</div>
+          <div class="phase-desc">Assembles cold open + intro music + all chapters + host outro + outro music into final MP3 with ID3 metadata (title, artist, artwork, chapter markers).</div>
+        </div>
+      </div>
+
+      <div class="code-block"><span class="c-cmt"># Audio mastering chain (per chapter)</span>
+<span class="c-fn">noise_gate</span>(threshold=<span class="c-num">-40</span>dB)
+  → <span class="c-fn">eq</span>(boost=<span class="c-str">"2-5kHz"</span>, cut=<span class="c-str">"&lt;100Hz"</span>)
+  → <span class="c-fn">compress</span>(ratio=<span class="c-num">2:1</span>, threshold=<span class="c-num">-20</span>dB)
+  → <span class="c-fn">normalize</span>(target=<span class="c-num">-16</span> LUFS)
+  → <span class="c-fn">room_tone</span>(level=<span class="c-num">-32</span>dB)
+  → chapter_N_mastered.wav</div>
+    </div>
+
+    <!-- 8. In-Memory -->
+    <div class="section" id="memory">
+      <div class="section-label"><span class="section-num">08</span></div>
+      <h2>In-Memory Processing Architecture</h2>
+      <p>A deliberate architecture decision: all deduplication, embedding, and relevance scoring runs <strong>entirely in RAM</strong> — no databases, no temp files, no external vector stores.</p>
+
+      <div class="phase-grid">
+        <div class="phase-box">
+          <span class="phase-icon">⚡</span>
+          <div class="phase-title">Performance</div>
+          <div class="phase-desc">40% faster than Bedrock vector DB alternative. Sub-second processing latency with zero I/O overhead.</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">💰</span>
+          <div class="phase-title">Cost</div>
+          <div class="phase-desc">$0.0003 per podcast (compute only) vs $0.0009 with Bedrock. 3× cheaper at scale.</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">🔒</span>
+          <div class="phase-title">Multi-Tenant Safety</div>
+          <div class="phase-desc">Each Lambda invocation is isolated. No shared state, no cross-tenant data leakage possible by design.</div>
+        </div>
+        <div class="phase-box">
+          <span class="phase-icon">📐</span>
+          <div class="phase-title">Memory Budget</div>
+          <div class="phase-desc">~210 MB peak usage: models (~150 MB) + embeddings (~1.2 MB) + FAISS index (~0.6 MB) + chunks (~50 MB). Well under Lambda's 2 GB limit.</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Why not a vector database?</strong> Each podcast generation is a one-shot operation —
+        embeddings are computed, used for deduplication, and discarded. There is no query-time retrieval,
+        no persistence requirement, and no cross-session reuse. A vector DB would add latency, cost,
+        and operational complexity with zero benefit.
+      </div>
+    </div>
+
+    <!-- 9. Stack -->
+    <div class="section" id="stack">
+      <div class="section-label"><span class="section-num">09</span></div>
+      <h2>Tech Stack</h2>
+
+      <div class="stack-grid">
+        <div class="stack-item">
+          <div class="si-layer">Agent Framework</div>
+          <div class="si-tech">LangGraph</div>
+          <div class="si-role">Stateful graph with conditional edges, subgraphs per phase, checkpoint persistence</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">LLM</div>
+          <div class="si-tech">OpenAI GPT-4</div>
+          <div class="si-role">Dialogue generation, query production, character design, content planning</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">TTS Engine</div>
+          <div class="si-tech">Gemini 2.5 Pro</div>
+          <div class="si-role">Multi-voice synthesis with SSML prosody, 10-voice bank, parallel execution</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Cold Open LLM</div>
+          <div class="si-tech">Claude Haiku</div>
+          <div class="si-role">Lightweight script scan for compelling excerpt selection (single call)</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">API</div>
+          <div class="si-tech">FastAPI</div>
+          <div class="si-role">Async REST endpoints for job submission and status tracking</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Embeddings</div>
+          <div class="si-tech">Sentence-Transformers</div>
+          <div class="si-role">384-dim embeddings for semantic deduplication and relevance scoring</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Vector Index</div>
+          <div class="si-tech">FAISS</div>
+          <div class="si-role">In-memory cosine similarity search for chunk deduplication</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Audio DSP</div>
+          <div class="si-tech">pydub + ffmpeg</div>
+          <div class="si-role">Overlap mixing, EQ, compression, loudness normalization, MP3 export</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Web Scraping</div>
+          <div class="si-tech">Trafilatura</div>
+          <div class="si-role">Clean text extraction from web pages, boilerplate removal</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Search</div>
+          <div class="si-tech">Google Custom Search</div>
+          <div class="si-role">SERP results for research phase query execution</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Runtime</div>
+          <div class="si-tech">AWS Lambda</div>
+          <div class="si-role">Serverless, 2 GB RAM, 5-min timeout, isolated per invocation</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Validation</div>
+          <div class="si-tech">Pydantic v2</div>
+          <div class="si-role">Typed state models, inter-phase contracts, auto-truncation validators</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Design Decisions -->
+    <div class="section" id="design">
+      <div class="section-label"><span class="section-num">10</span></div>
+      <h2>Design Decisions</h2>
+      <p>Eight core principles that shaped the architecture of the podcast generation pipeline.</p>
+
+      <div class="principle-grid">
+        <div class="principle-card">
+          <div class="pc-num">Principle 01</div>
+          <div class="pc-title">Phase-as-Subgraph Isolation</div>
+          <div class="pc-desc">Each phase is a self-contained LangGraph subgraph with its own state, retry logic, and quality gates. Phases communicate through strongly-typed contracts — never shared globals.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 02</div>
+          <div class="pc-title">In-Memory Everything</div>
+          <div class="pc-desc">No databases, no temp files, no external vector stores. All intermediate state lives in Python objects within a single Lambda invocation. Simpler, faster, cheaper.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 03</div>
+          <div class="pc-title">Beat-by-Beat Generation</div>
+          <div class="pc-desc">Dialogue is generated in 5 narrative beats per chapter, not monolithically. This prevents context overflow, maintains energy arc control, and enables granular QA.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 04</div>
+          <div class="pc-title">Naturalness Markers as First-Class Data</div>
+          <div class="pc-desc">7 marker types ([FILLER], [PAUSE], [LAUGH], etc.) flow through the entire pipeline — from script to SSML to timing directives to audio overlap. They are data, not decoration.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 05</div>
+          <div class="pc-title">Voice Consistency &gt; Voice Quality</div>
+          <div class="pc-desc">A speaker's voice is fixed for the entire episode. Fallback voices are pre-mapped by similarity. Listeners detect inconsistency faster than low quality.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 06</div>
+          <div class="pc-title">DSP over LLMs for Audio</div>
+          <div class="pc-desc">Phase 5 uses zero LLMs for audio processing (except one Haiku call for cold open selection). Mastering, mixing, and normalization are deterministic DSP operations.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 07</div>
+          <div class="pc-title">Freshness-Aware Research</div>
+          <div class="pc-desc">The query producer classifies topics as "recent" or "evergreen" and routes through different research paths. Recent topics get date-tagged queries and live web data.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 08</div>
+          <div class="pc-title">Contract-Driven Phase Handoffs</div>
+          <div class="pc-desc">Each phase validates its input contract before execution begins. If Phase 3's output doesn't match Phase 4's expected schema, the pipeline fails fast with a clear error — not silently.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listen CTA -->
+    <div class="download-section">
+      <h3>Hear It In Action</h3>
+      <p>Listen to a fully AI-generated podcast episode — from research to final master, produced entirely by this pipeline.</p>
+      <button class="btn-download" onclick="openPlayer()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Listen to Demo Episode
+      </button>
+    </div>
+
+  </div><!-- /page-wrap -->
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- Audio Player Popup -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div id="playerOverlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;">
+    <div id="playerBox" style="
+      width: 546px;
+      max-width: 92vw;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 31px 31px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+      position: relative;
+    ">
+      <!-- Close -->
+      <button onclick="closePlayer()" style="position:absolute;top:12px;right:14px;background:none;border:none;cursor:pointer;color:var(--text-3);font-size:20px;line-height:1;" aria-label="Close">&times;</button>
+
+      <div style="text-align:center;margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Now Playing</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);">AI-Generated Podcast Episode</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:2px;">Produced entirely by the Lotus AI pipeline</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-top:8px;">Impending China Taiwan War</div>
+      </div>
+
+      <!-- Waveform canvas -->
+      <canvas id="waveCanvas" width="484" height="104" style="
+        width: 100%;
+        height: 104px;
+        border-radius: 8px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        margin-bottom: 10px;
+        cursor: pointer;
+        display: block;
+      "></canvas>
+
+      <!-- Draggable Progress Bar -->
+      <input id="progressBar" type="range" min="0" max="1000" value="0" style="
+        width: 100%;
+        accent-color: #ff6200;
+        cursor: pointer;
+        margin-bottom: 6px;
+        display: block;
+        height: 4px;
+      " oninput="seekToProgress(this.value)" />
+
+      <!-- Time -->
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-bottom:14px;font-family:'Courier New',monospace;">
+        <span id="timeCurrent">0:00</span>
+        <span id="timeDuration">0:00</span>
+      </div>
+
+      <!-- Controls — 3-column: spacer | play | right-controls -->
+      <div style="display:flex;align-items:center;">
+        <!-- Left spacer -->
+        <div style="flex:1;"></div>
+
+        <!-- Play/Pause — true center -->
+        <button id="btnPlay" onclick="togglePlay()" style="
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+            transition: opacity 0.2s;
+          " aria-label="Play">
+            <svg id="iconPlay" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            <svg id="iconPause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>
+          </button>
+
+        <!-- Right controls -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:12px;">
+          <!-- Rewind 15s -->
+          <button onclick="seekRel(-15)" style="background:none;border:none;cursor:pointer;color:var(--text-2);display:flex;align-items:center;" aria-label="Rewind 15s">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/><text x="12" y="16" text-anchor="middle" font-size="7" fill="currentColor" stroke="none" font-weight="700">15</text></svg>
+          </button>
+
+          <!-- Forward 15s -->
+          <button onclick="seekRel(15)" style="background:none;border:none;cursor:pointer;color:var(--text-2);display:flex;align-items:center;" aria-label="Forward 15s">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/><text x="12" y="16" text-anchor="middle" font-size="7" fill="currentColor" stroke="none" font-weight="700">15</text></svg>
+          </button>
+
+          <!-- Volume -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button id="btnMute" onclick="toggleMute()" style="background:none;border:none;cursor:pointer;color:var(--text-2);display:flex;align-items:center;" aria-label="Mute">
+              <svg id="iconVol" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              <svg id="iconMute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            </button>
+            <input id="volSlider" type="range" min="0" max="100" value="80" style="width:64px;accent-color:#a855f7;cursor:pointer;" oninput="setVolume(this.value)" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Theme ─────────────────────────────────────────────────────────────
+    const html = document.documentElement;
+    const iconMoon = document.getElementById('icon-moon');
+    const iconSun  = document.getElementById('icon-sun');
+
+    function applyTheme(t) {
+      html.setAttribute('data-theme', t);
+      iconMoon.style.display = t === 'light' ? '' : 'none';
+      iconSun.style.display  = t === 'dark'  ? '' : 'none';
+      localStorage.setItem('theme', t);
+    }
+
+    function toggleTheme() {
+      applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    }
+
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(saved === 'light' ? 'light' : saved === 'dark' ? 'dark' : prefersDark ? 'dark' : 'light');
+
+    // ── Smooth scroll ─────────────────────────────────────────────────────
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const el = document.querySelector(a.getAttribute('href'));
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // ── Audio Player ──────────────────────────────────────────────────────
+    const overlay  = document.getElementById('playerOverlay');
+    const canvas   = document.getElementById('waveCanvas');
+    const ctx      = canvas.getContext('2d');
+    const timeCur  = document.getElementById('timeCurrent');
+    const timeDur  = document.getElementById('timeDuration');
+    const iconPlayEl  = document.getElementById('iconPlay');
+    const iconPauseEl = document.getElementById('iconPause');
+    const iconVolEl   = document.getElementById('iconVol');
+    const iconMuteEl  = document.getElementById('iconMute');
+    const volSlider   = document.getElementById('volSlider');
+    const progressBar = document.getElementById('progressBar');
+
+    let audio, audioCtx, analyser, sourceNode, dataArray, isSetup = false;
+    let animId;
+
+    function openPlayer() {
+      overlay.style.display = 'flex';
+      if (!audio) {
+        audio = new Audio('/ai-podcast-generator/demo.mp3');
+        audio.crossOrigin = 'anonymous';
+        audio.volume = 0.8;
+        audio.addEventListener('loadedmetadata', () => {
+          timeDur.textContent = fmtTime(audio.duration);
+        });
+        audio.addEventListener('timeupdate', () => {
+          timeCur.textContent = fmtTime(audio.currentTime);
+          if (audio.duration) progressBar.value = (audio.currentTime / audio.duration) * 1000;
+        });
+        audio.addEventListener('ended', () => {
+          iconPlayEl.style.display = '';
+          iconPauseEl.style.display = 'none';
+          cancelAnimationFrame(animId);
+          progressBar.value = 0;
+          drawIdleWave();
+        });
+      }
+    }
+
+    function closePlayer() {
+      overlay.style.display = 'none';
+      if (audio && !audio.paused) {
+        audio.pause();
+        iconPlayEl.style.display = '';
+        iconPauseEl.style.display = 'none';
+        cancelAnimationFrame(animId);
+      }
+    }
+
+    // Close on overlay click (not box)
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closePlayer();
+    });
+
+    function setupAudioContext() {
+      if (isSetup) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      sourceNode = audioCtx.createMediaElementSource(audio);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      isSetup = true;
+    }
+
+    function togglePlay() {
+      if (!audio) return;
+      setupAudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      if (audio.paused) {
+        audio.play();
+        iconPlayEl.style.display = 'none';
+        iconPauseEl.style.display = '';
+        drawWave();
+      } else {
+        audio.pause();
+        iconPlayEl.style.display = '';
+        iconPauseEl.style.display = 'none';
+        cancelAnimationFrame(animId);
+      }
+    }
+
+    function seekRel(s) {
+      if (!audio) return;
+      audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + s));
+    }
+
+    function seekToProgress(v) {
+      if (!audio || !audio.duration) return;
+      audio.currentTime = (v / 1000) * audio.duration;
+    }
+
+    function setVolume(v) {
+      if (!audio) return;
+      audio.volume = v / 100;
+      iconVolEl.style.display  = v > 0 ? '' : 'none';
+      iconMuteEl.style.display = v > 0 ? 'none' : '';
+    }
+
+    function toggleMute() {
+      if (!audio) return;
+      audio.muted = !audio.muted;
+      iconVolEl.style.display  = audio.muted ? 'none' : '';
+      iconMuteEl.style.display = audio.muted ? '' : 'none';
+    }
+
+    // Canvas click to seek
+    canvas.addEventListener('click', e => {
+      if (!audio || !audio.duration) return;
+      const rect = canvas.getBoundingClientRect();
+      const ratio = (e.clientX - rect.left) / rect.width;
+      audio.currentTime = ratio * audio.duration;
+    });
+
+    function fmtTime(s) {
+      if (!s || isNaN(s)) return '0:00';
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    // ── Waveform Drawing (synced to audio) ───────────────────────────────
+    function drawWave() {
+      animId = requestAnimationFrame(drawWave);
+      if (!analyser) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth * dpr;
+      const h = canvas.clientHeight * dpr;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      analyser.getByteFrequencyData(dataArray);
+      const isDark = html.getAttribute('data-theme') === 'dark';
+
+      ctx.clearRect(0, 0, w, h);
+
+      const barCount = 64;
+      const gap = 2 * dpr;
+      const barWidth = (w - (barCount - 1) * gap) / barCount;
+      const step = Math.floor(dataArray.length / barCount);
+
+      const grad = ctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0, '#ff6200');
+      grad.addColorStop(1, '#ffa500');
+
+      // Progress overlay
+      const progress = (audio && audio.duration) ? audio.currentTime / audio.duration : 0;
+
+      for (let i = 0; i < barCount; i++) {
+        const val = dataArray[i * step] / 255;
+        const barH = Math.max(3 * dpr, val * h * 0.85);
+        const x = i * (barWidth + gap);
+        const y = (h - barH) / 2;
+
+        const isPast = (x + barWidth) / w <= progress;
+
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, barH, 2 * dpr);
+        if (isPast) {
+          ctx.fillStyle = grad;
+          ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = isDark ? '#253040' : '#d0d7de';
+          ctx.globalAlpha = 0.7 + val * 0.3;
+        }
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawIdleWave() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth * dpr;
+      const h = canvas.clientHeight * dpr;
+      canvas.width = w;
+      canvas.height = h;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+
+      ctx.clearRect(0, 0, w, h);
+      const barCount = 64;
+      const gap = 2 * dpr;
+      const barWidth = (w - (barCount - 1) * gap) / barCount;
+
+      for (let i = 0; i < barCount; i++) {
+        const seed = Math.sin(i * 0.3) * 0.3 + 0.15;
+        const barH = Math.max(3 * dpr, seed * h * 0.6);
+        const x = i * (barWidth + gap);
+        const y = (h - barH) / 2;
+
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, barH, 2 * dpr);
+        ctx.fillStyle = isDark ? '#253040' : '#d0d7de';
+        ctx.globalAlpha = 0.5;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw idle waveform on load
+    window.addEventListener('load', drawIdleWave);
+    window.addEventListener('resize', () => { if (!audio || audio.paused) drawIdleWave(); });
+  </script>
+</body>
+</html>
