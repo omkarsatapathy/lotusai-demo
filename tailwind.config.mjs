@@ -67,10 +67,16 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "blob-float": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(40px, -60px) scale(1.08)" },
+          "66%": { transform: "translate(-30px, 30px) scale(0.92)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "blob-float": "blob-float 5.4s ease-in-out infinite",
       },
     },
   },

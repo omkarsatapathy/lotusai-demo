@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEO Article Generation — Technical Deep Dive | Lotus AI</title>
+  <link rel="icon" type="image/png" href="/Lotus%20AI%20logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07090f;
+      --surface: #0d1117;
+      --surface-2: #131920;
+      --surface-3: #1a2230;
+      --border: #1e2a3a;
+      --border-2: #253040;
+      --accent: #a855f7;
+      --accent-dim: rgba(168, 85, 247, 0.18);
+      --accent-glow: rgba(168, 85, 247, 0.35);
+      --teal: #ec4899;
+      --teal-dim: rgba(236, 72, 153, 0.15);
+      --text: #dde6f4;
+      --text-2: #8b9ab5;
+      --text-3: #445066;
+      --r: 8px;
+      --ease: 200ms ease;
+    }
+
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #fafafa;
+      --surface-3: #f4f4f8;
+      --border: #e1e4e8;
+      --border-2: #d0d7de;
+      --accent: #a855f7;
+      --accent-dim: rgba(168, 85, 247, 0.08);
+      --accent-glow: rgba(168, 85, 247, 0.15);
+      --teal: #ec4899;
+      --teal-dim: rgba(236, 72, 153, 0.1);
+      --text: #111827;
+      --text-2: #374151;
+      --text-3: #6b7280;
+    }
+
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 12px; }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-3);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: color var(--ease);
+    }
+    .back-link:hover { color: var(--accent); }
+    .back-link svg { width: 14px; height: 14px; }
+
+    .sep { color: var(--border-2); font-size: 16px; }
+
+    .breadcrumb-current {
+      font-size: 13px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      background: linear-gradient(to right, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo img { width: 28px; height: 28px; object-fit: contain; }
+
+    /* Theme Toggle — circular icon button matching main page */
+    .theme-toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color var(--ease), background var(--ease);
+      color: var(--text-2);
+    }
+    .theme-toggle:hover {
+      border-color: rgba(168, 85, 247, 0.5);
+      background: var(--surface-2);
+    }
+    .theme-toggle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Blob float animation ── */
+    @keyframes blob-float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(40px, -60px) scale(1.08); }
+      66%       { transform: translate(-30px, 30px) scale(0.92); }
+    }
+    .blob {
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(72px);
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: -1;
+      animation: blob-float 5.4s ease-in-out infinite;
+    }
+    .blob-1 { top: -60px; left: -80px;  background: #f9a8c9; animation-delay: 0s; }
+    .blob-2 { top: -40px; right: -80px; background: #c4b5fd; animation-delay: 2s; }
+    .blob-3 { top: 140px; left: 33%;    background: #ffc59a; animation-delay: 4s; }
+
+    [data-theme="light"] .blob { mix-blend-mode: multiply; }
+    [data-theme="dark"]  .blob { mix-blend-mode: soft-light; opacity: 0.3; }
+
+    /* ── Main layout ── */
+    .page-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 56px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      border-radius: 20px;
+      padding: 4px 12px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .hero h1 .grad {
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 1rem;
+      color: var(--text-2);
+      max-width: 620px;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-2);
+      background: var(--surface-2);
+      color: var(--text-2);
+    }
+    .badge.purple { border-color: rgba(168,85,247,0.4); color: #a855f7; background: rgba(168,85,247,0.07); }
+    .badge.pink { border-color: rgba(236,72,153,0.4); color: #ec4899; background: rgba(236,72,153,0.07); }
+    .badge.blue { border-color: rgba(59,130,246,0.4); color: #3b82f6; background: rgba(59,130,246,0.07); }
+    .badge.green { border-color: rgba(34,197,94,0.4); color: #22c55e; background: rgba(34,197,94,0.07); }
+    .badge.orange { border-color: rgba(249,115,22,0.4); color: #f97316; background: rgba(249,115,22,0.07); }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 52px;
+    }
+    .toc-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+      margin-bottom: 12px;
+    }
+    .toc ol { padding-left: 18px; }
+    .toc li { margin: 6px 0; }
+    .toc a {
+      color: var(--text-2);
+      text-decoration: none;
+      font-size: 13.5px;
+      transition: color var(--ease);
+    }
+    .toc a:hover { color: var(--accent); }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 52px;
+      padding-bottom: 52px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .section-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      border-radius: 6px;
+      padding: 2px 8px;
+      letter-spacing: 0.05em;
+    }
+    .section h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .section p, .section li {
+      color: var(--text-2);
+      line-height: 1.75;
+      font-size: 14.5px;
+    }
+    .section ul, .section ol {
+      padding-left: 20px;
+      margin: 10px 0;
+    }
+    .section li { margin: 5px 0; }
+    .section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 24px 0 10px;
+    }
+
+    /* ── Architecture Diagram ── */
+    .arch-diagram {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      overflow-x: auto;
+    }
+
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      min-width: 360px;
+    }
+
+    .pipeline-input {
+      background: var(--surface-3);
+      border: 1.5px dashed var(--border-2);
+      border-radius: 10px;
+      padding: 10px 24px;
+      font-size: 12.5px;
+      color: var(--text-3);
+      font-weight: 500;
+      font-family: 'Courier New', monospace;
+    }
+
+    .arrow-down {
+      color: var(--text-3);
+      font-size: 18px;
+      line-height: 1.2;
+      margin: 2px 0;
+    }
+
+    .pipe-node {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--border-2);
+      border-radius: 10px;
+      padding: 10px 20px;
+      min-width: 240px;
+      transition: border-color var(--ease);
+    }
+    .pipe-node:hover { border-color: var(--accent); }
+    .pipe-node .node-icon { font-size: 16px; }
+    .pipe-node .node-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+    }
+    .pipe-node .node-type {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .react-type { background: rgba(168,85,247,0.12); color: #a855f7; }
+    .seq-type   { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .fn-type    { background: rgba(34,197,94,0.12);  color: #22c55e; }
+
+    .pipe-node.accent-border { border-color: var(--accent); }
+
+    .qa-fork {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .qa-box {
+      background: var(--surface);
+      border: 1.5px solid #a855f7;
+      border-radius: 10px;
+      padding: 10px 20px;
+      width: 240px;
+      text-align: left;
+    }
+
+    .qa-routes {
+      display: flex;
+      justify-content: space-around;
+      gap: 8px;
+      width: 100%;
+      margin: 4px 0;
+    }
+    .qa-route {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: var(--text-3);
+      text-align: center;
+    }
+    .qa-route span {
+      display: block;
+      font-weight: 600;
+      font-size: 10.5px;
+      margin-bottom: 3px;
+    }
+    .qa-route.pass span { color: #22c55e; }
+    .qa-route.fail span { color: #f59e0b; }
+    .qa-route.max  span { color: #f97316; }
+
+    /* ── AWS Diagram ── */
+    .aws-diagram {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    @media (max-width: 540px) {
+      .aws-diagram { grid-template-columns: 1fr; }
+    }
+
+    .aws-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .aws-box .aws-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .aws-box .aws-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .aws-box .aws-desc {
+      font-size: 12px;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+    .aws-box.highlight {
+      border-color: rgba(168,85,247,0.4);
+      background: var(--accent-dim);
+    }
+    .aws-box.full { grid-column: 1 / -1; }
+
+    /* ── Tables ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+    .data-table th {
+      background: var(--surface-3);
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-2);
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--surface-2); }
+    .data-table .mono { font-family: 'Courier New', monospace; font-size: 12px; color: var(--accent); }
+
+    /* ── Code block ── */
+    .code-block {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin: 16px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px;
+      color: var(--text-2);
+      line-height: 1.65;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .code-block .c-kw  { color: #ec4899; }
+    .code-block .c-str { color: #22c55e; }
+    .code-block .c-num { color: #f59e0b; }
+    .code-block .c-cmt { color: var(--text-3); font-style: italic; }
+    .code-block .c-fn  { color: #a855f7; }
+
+    /* ── Scoring bars ── */
+    .score-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 16px 0;
+    }
+    @media (max-width: 480px) { .score-grid { grid-template-columns: 1fr; } }
+
+    .score-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .score-item .si-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .score-item .si-bar-bg {
+      height: 5px;
+      background: var(--surface-3);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .score-item .si-bar { height: 100%; border-radius: 3px; }
+    .bar-red    { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .bar-orange { background: linear-gradient(90deg, #f97316, #ea580c); }
+    .bar-yellow { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .score-item .si-penalty {
+      font-size: 11px;
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    /* ── Design principle cards ── */
+    .principle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    @media (max-width: 540px) { .principle-grid { grid-template-columns: 1fr; } }
+
+    .principle-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .principle-card .pc-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 6px;
+    }
+    .principle-card .pc-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .principle-card .pc-desc {
+      font-size: 12.5px;
+      color: var(--text-3);
+      line-height: 1.55;
+    }
+
+    /* ── Tech stack chips ── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .stack-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      transition: border-color var(--ease);
+    }
+    .stack-item:hover { border-color: var(--accent); }
+    .stack-item .si-layer {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-3);
+      margin-bottom: 4px;
+    }
+    .stack-item .si-tech {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .stack-item .si-role {
+      font-size: 11.5px;
+      color: var(--text-3);
+      line-height: 1.45;
+    }
+
+    /* ── Download CTA ── */
+    .download-section {
+      background: linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(236,72,153,0.08) 100%);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin-top: 52px;
+    }
+    .download-section h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .download-section p {
+      font-size: 13.5px;
+      color: var(--text-2);
+      margin-bottom: 22px;
+    }
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+      color: #ffffff;
+      text-decoration: none;
+      transition: opacity var(--ease), box-shadow var(--ease);
+      box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+    }
+    .btn-download:hover { opacity: 0.9; box-shadow: 0 6px 28px rgba(168,85,247,0.45); }
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      border: 1.5px solid rgba(168,85,247,0.5);
+      color: var(--accent);
+      text-decoration: none;
+      transition: all var(--ease);
+      margin-left: 10px;
+    }
+    .btn-outline:hover { background: var(--accent-dim); }
+
+    /* ── Flow arrow box ── */
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+    .flow-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 13px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-2);
+    }
+    .flow-box.accent { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .flow-arrow { color: var(--text-3); font-size: 14px; }
+
+    /* ── Callout box ── */
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--accent-dim);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin: 16px 0;
+      font-size: 13.5px;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+    .callout strong { color: var(--accent); }
+
+    /* ── DB layers ── */
+    .db-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    @media (max-width: 540px) { .db-grid { grid-template-columns: 1fr; } }
+
+    .db-layer {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .db-layer .dl-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent);
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .db-layer .dl-table {
+      font-size: 11.5px;
+      color: var(--text-3);
+      font-weight: 600;
+      margin: 4px 0;
+    }
+    .db-layer .dl-field {
+      font-size: 11px;
+      color: var(--text-3);
+      padding-left: 10px;
+      margin: 2px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* responsive */
+    @media (max-width: 640px) {
+      .page-wrap { padding: 40px 16px 60px; }
+      header { padding: 0 16px; }
+      .logo { display: none; }
+      .aws-diagram { grid-template-columns: 1fr; }
+      .aws-box.full { grid-column: auto; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <a href="/seo-article-generation/index.html" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </a>
+      <span class="sep">/</span>
+      <span class="breadcrumb-current">Technical Deep Dive</span>
+    </div>
+
+    <div class="logo">
+      <img src="/Lotus%20AI%20logo.png" alt="Lotus AI" />
+      Lotus AI
+    </div>
+
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <!-- icon swapped by JS -->
+      <svg id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="icon-sun"  viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </header>
+
+  <div class="page-wrap">
+
+    <!-- Hero -->
+    <div class="hero" style="position:relative;overflow:visible;">
+      <!-- Floating background blobs -->
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+
+      <div class="hero-eyebrow">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Technical Documentation
+      </div>
+      <h1>SEO Article Generation<br/><span class="grad">System Architecture</span></h1>
+      <p class="hero-subtitle">
+        A production-ready, multi-agent LangGraph pipeline for generating SEO-optimized articles
+        with real-time monitoring, crash recovery, and comprehensive quality assurance — deployed
+        on AWS Lambda with Bedrock-powered Claude models.
+      </p>
+      <div class="badge-row">
+        <span class="badge purple">LangGraph</span>
+        <span class="badge pink">FastAPI</span>
+        <span class="badge blue">AWS Bedrock</span>
+        <span class="badge blue">Lambda</span>
+        <span class="badge green">PostgreSQL</span>
+        <span class="badge orange">Claude Sonnet</span>
+        <span class="badge purple">DynamoDB</span>
+        <span class="badge green">SSE Streaming</span>
+      </div>
+    </div>
+
+    <!-- TOC -->
+    <div class="toc">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#overview">Project Overview</a></li>
+        <li><a href="#architecture">System Architecture &amp; Pipeline</a></li>
+        <li><a href="#agents">Agent Node Catalogue</a></li>
+        <li><a href="#routing">Conditional Routing Logic</a></li>
+        <li><a href="#database">Database Architecture</a></li>
+        <li><a href="#aws">AWS Infrastructure</a></li>
+        <li><a href="#sse">Real-Time Log Streaming (SSE)</a></li>
+        <li><a href="#qa">QA Scoring Engine</a></li>
+        <li><a href="#config">Configuration System</a></li>
+        <li><a href="#stack">Tech Stack</a></li>
+        <li><a href="#design">Design Decisions</a></li>
+      </ol>
+    </div>
+
+    <!-- 1. Overview -->
+    <div class="section" id="overview">
+      <div class="section-label"><span class="section-num">01</span></div>
+      <h2>Project Overview</h2>
+      <p>
+        The SEO Article Generation System is a sophisticated application that automatically generates
+        high-quality, SEO-optimized articles through a <strong>7-node multi-agent AI pipeline</strong>.
+        It combines real-time research via SerpAPI, intelligent content generation via Claude or GPT-4,
+        comprehensive quality assurance, and crash-recovery capabilities.
+      </p>
+
+      <h3>What the pipeline does</h3>
+      <div class="flow-row">
+        <div class="flow-box accent">Input</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Research</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Outline</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Write</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">QA Score</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box accent">Article</div>
+      </div>
+
+      <ul>
+        <li><strong>Accepts user input:</strong> topic, desired word count, language</li>
+        <li><strong>Conducts research:</strong> fetches real SERP data, competitor structures, FAQs</li>
+        <li><strong>Generates outline:</strong> SEO-aligned article structure with keyword mapping</li>
+        <li><strong>Writes content:</strong> section-by-section generation with internal/external linking</li>
+        <li><strong>Validates quality:</strong> 15+ SEO checks with penalty/bonus scoring</li>
+        <li><strong>Revision loop:</strong> rewrites until SEO score ≥ 80 or max 3 revisions reached</li>
+        <li><strong>Returns result:</strong> final article + metadata, keywords, links, SEO score</li>
+      </ul>
+
+      <div class="callout">
+        <strong>Production-grade:</strong> Every component is async, all data flows through a strongly-typed
+        Pydantic state model, PostgreSQL checkpointing enables crash recovery, and log streaming
+        keeps you observable at all times.
+      </div>
+    </div>
+
+    <!-- 2. Architecture -->
+    <div class="section" id="architecture">
+      <div class="section-label"><span class="section-num">02</span></div>
+      <h2>System Architecture &amp; Pipeline</h2>
+      <p>The system uses a <strong>LangGraph StateGraph</strong> with conditional routing, per-node retry logic, and persistent PostgreSQL checkpointing.</p>
+
+      <div class="arch-diagram">
+        <div class="pipeline">
+
+          <div class="pipeline-input">INPUT { topic, word_count, language }</div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">🚪</span>
+            <span class="node-label">FastAPI Gateway</span>
+            <span class="node-type seq-type">POST /jobs/</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">🎭</span>
+            <span class="node-label">ORCHESTRATOR</span>
+            <span class="node-type react-type">ReAct</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">🔍</span>
+            <span class="node-label">RESEARCH</span>
+            <span class="node-type react-type">ReAct · 3 retries</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">📐</span>
+            <span class="node-label">OUTLINE</span>
+            <span class="node-type react-type">ReAct · 3 retries</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">✍️</span>
+            <span class="node-label">WRITER</span>
+            <span class="node-type seq-type">Sequential · 3 retries</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node accent-border">
+            <span class="node-icon">✅</span>
+            <span class="node-label">QA (score ≥ 80?)</span>
+            <span class="node-type react-type">ReAct</span>
+          </div>
+
+          <div style="display:flex;gap:8px;margin:4px 0;width:100%;max-width:480px;justify-content:center;">
+            <div class="qa-route pass"><span>PASS</span>→ Output</div>
+            <div class="qa-route fail"><span>FAIL &lt; 80</span>↺ Writer (max 3)</div>
+            <div class="qa-route max"><span>MAX REVISIONS</span>→ Best-effort</div>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipe-node">
+            <span class="node-icon">📦</span>
+            <span class="node-label">OUTPUT BUILDER</span>
+            <span class="node-type fn-type">Plain fn</span>
+          </div>
+          <div class="arrow-down">↓</div>
+
+          <div class="pipeline-input">OUTPUT { article, seo_metadata, score, links }</div>
+        </div>
+      </div>
+
+      <p>Every node that fails past its retry budget routes to an <strong>ERROR HANDLER</strong> terminal node. The entire state object (<code>ArticleGenerationState</code>) is the single source of truth — no side channels, no globals.</p>
+    </div>
+
+    <!-- 3. Agents -->
+    <div class="section" id="agents">
+      <div class="section-label"><span class="section-num">03</span></div>
+      <h2>Agent Node Catalogue</h2>
+      <p>Six operational nodes plus one terminal error handler. Each has an independent retry budget.</p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Node</th>
+            <th>Type</th>
+            <th>Tools</th>
+            <th>Max Iter</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ORCHESTRATOR</strong></td>
+            <td><span class="badge purple" style="font-size:11px;">ReAct</span></td>
+            <td class="mono">validate_input_tool, job_init_tool</td>
+            <td>10</td>
+          </tr>
+          <tr>
+            <td><strong>RESEARCH</strong></td>
+            <td><span class="badge purple" style="font-size:11px;">ReAct</span></td>
+            <td class="mono">serp_fetch_tool, theme_extractor_tool, faq_extractor_tool</td>
+            <td>10</td>
+          </tr>
+          <tr>
+            <td><strong>OUTLINE</strong></td>
+            <td><span class="badge purple" style="font-size:11px;">ReAct</span></td>
+            <td class="mono">outline_builder_tool, keyword_mapper_tool</td>
+            <td>10</td>
+          </tr>
+          <tr>
+            <td><strong>WRITER</strong></td>
+            <td><span class="badge blue" style="font-size:11px;">Sequential</span></td>
+            <td class="mono">article_writer_tool, linking_tool, metadata_generator_tool</td>
+            <td>N/A</td>
+          </tr>
+          <tr>
+            <td><strong>QA</strong></td>
+            <td><span class="badge purple" style="font-size:11px;">ReAct</span></td>
+            <td class="mono">seo_validator_tool, score_calculator_tool</td>
+            <td>8</td>
+          </tr>
+          <tr>
+            <td><strong>OUTPUT BUILDER</strong></td>
+            <td><span class="badge green" style="font-size:11px;">Plain fn</span></td>
+            <td>— (assembly only)</td>
+            <td>N/A</td>
+          </tr>
+          <tr>
+            <td><strong>ERROR HANDLER</strong></td>
+            <td><span class="badge green" style="font-size:11px;">Plain fn</span></td>
+            <td>— (terminal state)</td>
+            <td>N/A</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Why is the Writer Sequential, not ReAct?</strong>
+        The article writer calls tools in a deterministic order:
+        <code>article_writer → linking_tool → metadata_generator</code>.
+        A ReAct agent loop adds no value here and risks non-determinism in section ordering.
+        Direct sequential calls give precise control over section-by-section generation.
+      </div>
+    </div>
+
+    <!-- 4. Routing -->
+    <div class="section" id="routing">
+      <div class="section-label"><span class="section-num">04</span></div>
+      <h2>Conditional Routing Logic</h2>
+      <p>LangGraph conditional edges route the graph after each node using simple boolean checks on the shared state object.</p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>After Node</th>
+            <th>Condition</th>
+            <th>Destination</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RESEARCH</strong></td>
+            <td><code>retry_counts["research"] ≥ 3</code></td>
+            <td>→ error_handler</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><code>serp_results present</code></td>
+            <td>→ outline</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><em>else</em></td>
+            <td>↺ research (retry)</td>
+          </tr>
+          <tr>
+            <td><strong>OUTLINE</strong></td>
+            <td><code>retry_counts["outline"] ≥ 3</code></td>
+            <td>→ error_handler</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><code>outline present</code></td>
+            <td>→ writer</td>
+          </tr>
+          <tr>
+            <td><strong>WRITER</strong></td>
+            <td><code>retry_counts["writer"] ≥ 3</code></td>
+            <td>→ error_handler</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><code>article_draft present</code></td>
+            <td>→ qa</td>
+          </tr>
+          <tr>
+            <td><strong>QA</strong></td>
+            <td><code>status == "done"</code></td>
+            <td>→ output_builder</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><code>revision_count ≥ 3</code></td>
+            <td>→ output_builder (best-effort)</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><em>score &lt; 80</em></td>
+            <td>↺ writer (revision loop)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The QA → Writer loop passes accumulated <code>qa_result.issues</code> and <code>qa_result.suggestions</code>
+      directly in state — the Writer receives first-class feedback on each revision cycle.</p>
+    </div>
+
+    <!-- 5. Database -->
+    <div class="section" id="database">
+      <div class="section-label"><span class="section-num">05</span></div>
+      <h2>Database Architecture</h2>
+      <p>PostgreSQL is used for <strong>two distinct purposes</strong> with completely separate code paths — both in the same database instance.</p>
+
+      <div class="db-grid">
+        <div class="db-layer">
+          <div class="dl-title">SQLAlchemy Async ORM</div>
+          <div class="dl-table">generation_jobs</div>
+          <div class="dl-field">job_id UUID PK</div>
+          <div class="dl-field">topic TEXT</div>
+          <div class="dl-field">word_count INT</div>
+          <div class="dl-field">status VARCHAR(20)</div>
+          <div class="dl-field">thread_id TEXT UNIQUE</div>
+          <div class="dl-field">seo_score INT</div>
+          <div class="dl-field">error_message TEXT</div>
+          <div class="dl-field">timestamps</div>
+          <br/>
+          <div class="dl-table">generated_articles</div>
+          <div class="dl-field">id UUID PK</div>
+          <div class="dl-field">job_id UUID FK</div>
+          <div class="dl-field">final_article TEXT</div>
+          <div class="dl-field">seo_metadata JSON</div>
+          <div class="dl-field">keywords JSON</div>
+          <div class="dl-field">internal_links JSON</div>
+          <div class="dl-field">external_refs JSON</div>
+          <div class="dl-field">seo_score INT</div>
+        </div>
+        <div class="db-layer">
+          <div class="dl-title">LangGraph PostgresSaver</div>
+          <div class="dl-table">checkpoints</div>
+          <div class="dl-field">thread_id TEXT</div>
+          <div class="dl-field">checkpoint_ns TEXT</div>
+          <div class="dl-field">checkpoint_id TEXT</div>
+          <div class="dl-field">parent_checkpoint_id</div>
+          <br/>
+          <div class="dl-table">checkpoint_writes</div>
+          <div class="dl-field">task writes per node</div>
+          <br/>
+          <div class="dl-table">checkpoint_blobs</div>
+          <div class="dl-field">serialized state blobs</div>
+          <br/>
+          <div style="margin-top:12px;font-size:12px;color:var(--text-3);line-height:1.5;">
+            Key: <code style="color:var(--accent);">seo-job:{job_id}</code><br/>
+            Links back to <code>generation_jobs.thread_id</code>
+          </div>
+        </div>
+      </div>
+
+      <h3>Crash Resume Pattern</h3>
+      <div class="code-block"><span class="c-cmt"># Pipeline: Research ✅ → Outline ✅ → Writer 💥 CRASH</span>
+
+<span class="c-cmt"># On restart — pass None as input to signal "resume":</span>
+graph.invoke(<span class="c-kw">None</span>, config={<span class="c-str">"configurable"</span>: {<span class="c-str">"thread_id"</span>: <span class="c-str">"seo-job:abc123"</span>}})
+
+<span class="c-cmt"># LangGraph finds last checkpoint → skips Research + Outline → retries Writer only.</span></div>
+    </div>
+
+    <!-- 6. AWS -->
+    <div class="section" id="aws">
+      <div class="section-label"><span class="section-num">06</span></div>
+      <h2>AWS Infrastructure</h2>
+      <p>The system is deployable as a serverless application using AWS SAM, Docker containers, and Lambda with API Gateway.</p>
+
+      <div class="aws-diagram">
+        <div class="aws-box highlight">
+          <span class="aws-icon">🌐</span>
+          <div class="aws-title">API Gateway (REST)</div>
+          <div class="aws-desc">Routes all HTTP traffic. Endpoints: <code>/jobs/*</code>, <code>/health</code>, <code>/docs</code></div>
+        </div>
+        <div class="aws-box highlight">
+          <span class="aws-icon">λ</span>
+          <div class="aws-title">Lambda Function</div>
+          <div class="aws-desc">Docker container · Python 3.12 · FastAPI + Mangum · 3008 MB RAM · 15 min timeout</div>
+        </div>
+        <div class="aws-box">
+          <span class="aws-icon">🗄️</span>
+          <div class="aws-title">DynamoDB</div>
+          <div class="aws-desc">Table: <code>SEO-article-write</code>. Stores job metadata and generated articles. On-demand pricing.</div>
+        </div>
+        <div class="aws-box">
+          <span class="aws-icon">🧠</span>
+          <div class="aws-title">AWS Bedrock</div>
+          <div class="aws-desc">Model: <code>anthropic.claude-sonnet-4-6</code>. Used for all LLM calls via <code>ChatBedrockConverse</code>. Falls back to OpenAI if configured.</div>
+        </div>
+        <div class="aws-box">
+          <span class="aws-icon">📋</span>
+          <div class="aws-title">CloudWatch Logs</div>
+          <div class="aws-desc">Log group: <code>/aws/lambda/SEOArticleGenerationAPI</code>. 7-day retention. Real-time tailing via SAM CLI.</div>
+        </div>
+        <div class="aws-box">
+          <span class="aws-icon">🔐</span>
+          <div class="aws-title">IAM Role</div>
+          <div class="aws-desc">Least-privilege. Grants Lambda access to DynamoDB, Bedrock, and CloudWatch only.</div>
+        </div>
+      </div>
+
+      <h3>LLM Provider Factory</h3>
+      <p>The system uses a factory pattern to support both OpenAI and AWS Bedrock:</p>
+      <div class="code-block"><span class="c-cmt"># .env</span>
+LLM_PROVIDER=bedrock
+
+<span class="c-cmt"># Bedrock config</span>
+AWS_PROFILE=personal-dev-dev
+BEDROCK_MODEL=anthropic.claude-sonnet-4-6
+BEDROCK_WRITER_MODEL=anthropic.claude-sonnet-4-6
+
+<span class="c-cmt"># Or switch to OpenAI with a single line</span>
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-proj-...</div>
+
+      <div class="callout">
+        <strong>Why Bedrock?</strong> AWS Bedrock provides access to Claude Sonnet models without
+        direct Anthropic API calls — traffic stays within the AWS network, billing is unified,
+        and IAM controls access rather than API key management.
+      </div>
+
+      <h3>Serverless Deployment</h3>
+      <p>Deployed via AWS SAM + Docker. UV package manager cuts build time from ~3 min (pip) to ~15 seconds.</p>
+      <table class="data-table">
+        <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">template.yaml</td><td>SAM/CloudFormation — Lambda, API Gateway, IAM roles</td></tr>
+          <tr><td class="mono">lambda_handler.py</td><td>Entry point wrapping FastAPI with Mangum</td></tr>
+          <tr><td class="mono">Dockerfile.lambda</td><td>Production image using UV · Python 3.12 base</td></tr>
+          <tr><td class="mono">samconfig.toml</td><td>SAM CLI config for dev/prod environments</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 7. SSE -->
+    <div class="section" id="sse">
+      <div class="section-label"><span class="section-num">07</span></div>
+      <h2>Real-Time Log Streaming (SSE)</h2>
+      <p>Every log record generated by the pipeline is broadcast to connected browsers via <strong>Server-Sent Events</strong>, giving you a live window into agent execution.</p>
+
+      <div class="arch-diagram">
+        <div style="font-size:13px;line-height:1.9;font-family:'Courier New',monospace;color:var(--text-2);">
+          <span style="color:var(--accent);font-weight:700;">_BroadcastHandler</span> (logging.Handler)<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;│ attaches to root logger — captures every record<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;▼<br/>
+          <span style="color:var(--text);">_buffer</span>: deque(maxlen=<span style="color:#f59e0b;">400</span>)  ← ring buffer, newest evicts oldest<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;│<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;├──► <span style="color:var(--text);">_queues</span>: List[asyncio.Queue]  ← one Queue per SSE client<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;│<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;└──► loop.call_soon_threadsafe()  ← safe cross-thread delivery<br/><br/>
+          <span style="color:#22c55e;">GET /logs/stream</span><br/>
+          &nbsp;&nbsp;&nbsp;1. Replay entire _buffer → new client catches up instantly<br/>
+          &nbsp;&nbsp;&nbsp;2. Listen on personal Queue (20s timeout)<br/>
+          &nbsp;&nbsp;&nbsp;3. Emit: <span style="color:#3b82f6;">data: {"level":"INFO","name":"...","text":"..."}</span><br/>
+          &nbsp;&nbsp;&nbsp;4. Send ": keep-alive" ping every 20s<br/>
+          &nbsp;&nbsp;&nbsp;5. Remove queue on client disconnect
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Why <code>asyncio.to_thread</code>?</strong> The LangGraph graph is synchronous.
+        Running it directly would block the asyncio event loop, preventing SSE clients from receiving
+        live log updates during article generation. <code>asyncio.to_thread</code> offloads the graph
+        to a thread pool, keeping the event loop free for streaming.
+      </div>
+    </div>
+
+    <!-- 8. QA Scoring -->
+    <div class="section" id="qa">
+      <div class="section-label"><span class="section-num">08</span></div>
+      <h2>QA Scoring Engine</h2>
+      <p>The QA agent starts every article at a score of <strong>100</strong> and applies penalties for SEO issues. Pass threshold is <strong>80</strong>.</p>
+
+      <div class="score-grid">
+        <div class="score-item">
+          <div class="si-name">keyword_in_h1</div>
+          <div class="si-bar-bg"><div class="si-bar bar-red" style="width:75%"></div></div>
+          <div class="si-penalty">−15 pts · Primary keyword absent from H1</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">keyword_in_intro</div>
+          <div class="si-bar-bg"><div class="si-bar bar-red" style="width:75%"></div></div>
+          <div class="si-penalty">−15 pts · Absent from first 500 chars</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">word_count_severe</div>
+          <div class="si-bar-bg"><div class="si-bar bar-red" style="width:100%"></div></div>
+          <div class="si-penalty">−30 pts · &lt;60% or &gt;200% of target</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">word_count_significant</div>
+          <div class="si-bar-bg"><div class="si-bar bar-orange" style="width:66%"></div></div>
+          <div class="si-penalty">−20 pts · 60–75% of target</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">keyword_density_range</div>
+          <div class="si-bar-bg"><div class="si-bar bar-orange" style="width:50%"></div></div>
+          <div class="si-penalty">−10 pts · Density &lt;0.5% or &gt;3.0%</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">h2_keyword_coverage</div>
+          <div class="si-bar-bg"><div class="si-bar bar-orange" style="width:50%"></div></div>
+          <div class="si-penalty">−10 pts · Fewer than 2 H2s have keyword</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">title_tag_length</div>
+          <div class="si-bar-bg"><div class="si-bar bar-yellow" style="width:33%"></div></div>
+          <div class="si-penalty">−10 pts · title_tag &gt; 60 chars</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">meta_description_length</div>
+          <div class="si-bar-bg"><div class="si-bar bar-yellow" style="width:33%"></div></div>
+          <div class="si-penalty">−10 pts · meta_desc &gt; 160 chars</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">heading_hierarchy</div>
+          <div class="si-bar-bg"><div class="si-bar bar-yellow" style="width:33%"></div></div>
+          <div class="si-penalty">−10 pts · H3 without parent H2</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">short_section</div>
+          <div class="si-bar-bg"><div class="si-bar bar-yellow" style="width:17%"></div></div>
+          <div class="si-penalty">−5 pts · H2 section &lt; 100 words</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">link_placeholders</div>
+          <div class="si-bar-bg"><div class="si-bar bar-yellow" style="width:17%"></div></div>
+          <div class="si-penalty">−5 pts · Unresolved [LINK] markers</div>
+        </div>
+        <div class="score-item">
+          <div class="si-name">content_truncated</div>
+          <div class="si-bar-bg"><div class="si-bar bar-yellow" style="width:17%"></div></div>
+          <div class="si-penalty">−5 pts · Article ends mid-sentence</div>
+        </div>
+      </div>
+
+      <p>If score &lt; 80 and <code>revision_count &lt; 3</code>, the QA agent routes back to the Writer with a structured <code>qa_result</code> containing issues and improvement suggestions. After 3 revisions, the best-effort article is published regardless.</p>
+    </div>
+
+    <!-- 9. Config -->
+    <div class="section" id="config">
+      <div class="section-label"><span class="section-num">09</span></div>
+      <h2>Configuration System</h2>
+      <p>All tunable parameters live in three YAML files under <code>config/</code> — no hardcoded values in agent code.</p>
+
+      <table class="data-table">
+        <thead><tr><th>File</th><th>Contains</th><th>Key params</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">hyperparams.yaml</td>
+            <td>Numerical thresholds</td>
+            <td>max_retries=3, max_revisions=3, qa.pass_score=80, word_count_min=500</td>
+          </tr>
+          <tr>
+            <td class="mono">settings.yaml</td>
+            <td>App settings</td>
+            <td>LLM model, temperature, CORS origins, logging format</td>
+          </tr>
+          <tr>
+            <td class="mono">prompts.yaml</td>
+            <td>Agent system prompts</td>
+            <td>One prompt per node: research, outline, writer, qa</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="code-block"><span class="c-kw">from</span> config.config <span class="c-kw">import</span> cfg
+
+cfg.hyperparams.pipeline.max_retries       <span class="c-cmt"># 3</span>
+cfg.hyperparams.qa.pass_score              <span class="c-cmt"># 80</span>
+cfg.hyperparams.article.word_count_default <span class="c-cmt"># 1500</span>
+cfg.prompts.agents.research                <span class="c-cmt"># system prompt string</span>
+cfg.settings.app.title                     <span class="c-cmt"># "SEO Article Generation API"</span></div>
+    </div>
+
+    <!-- 10. Stack -->
+    <div class="section" id="stack">
+      <div class="section-label"><span class="section-num">10</span></div>
+      <h2>Tech Stack</h2>
+
+      <div class="stack-grid">
+        <div class="stack-item">
+          <div class="si-layer">Agent Framework</div>
+          <div class="si-tech">LangGraph</div>
+          <div class="si-role">Stateful graph, conditional edges, checkpoint persistence</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">LLM</div>
+          <div class="si-tech">Claude Sonnet 4.6</div>
+          <div class="si-role">Via AWS Bedrock (or OpenAI GPT-4 fallback)</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">API</div>
+          <div class="si-tech">FastAPI</div>
+          <div class="si-role">Async REST endpoints, CORS, SSE log streaming</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Database</div>
+          <div class="si-tech">PostgreSQL 16</div>
+          <div class="si-role">ORM tables + LangGraph checkpoint tables</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">ORM</div>
+          <div class="si-tech">SQLAlchemy 2.0</div>
+          <div class="si-role">Async CRUD with asyncpg driver</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Checkpointing</div>
+          <div class="si-tech">PostgresSaver</div>
+          <div class="si-role">LangGraph crash recovery and pipeline resume</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Validation</div>
+          <div class="si-tech">Pydantic v2</div>
+          <div class="si-role">All agent I/O models, auto-truncation validators</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Search Data</div>
+          <div class="si-tech">SerpAPI</div>
+          <div class="si-role">Real SERP results with mock fallback for offline tests</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">AWS Runtime</div>
+          <div class="si-tech">Lambda + Mangum</div>
+          <div class="si-role">Serverless FastAPI via ASGI adapter</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Build</div>
+          <div class="si-tech">UV + Docker</div>
+          <div class="si-role">10–100× faster builds; reproducible container images</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Testing</div>
+          <div class="si-tech">Pytest + asyncio</div>
+          <div class="si-role">Unit, integration, and end-to-end graph tests</div>
+        </div>
+        <div class="stack-item">
+          <div class="si-layer">Config</div>
+          <div class="si-tech">YAML + dataclasses</div>
+          <div class="si-role">Decoupled hyperparams, prompts, and app settings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. Design Decisions -->
+    <div class="section" id="design">
+      <div class="section-label"><span class="section-num">11</span></div>
+      <h2>Design Decisions</h2>
+      <p>Eight core principles that guided every architectural choice in this system.</p>
+
+      <div class="principle-grid">
+        <div class="principle-card">
+          <div class="pc-num">Principle 01</div>
+          <div class="pc-title">State as Single Source of Truth</div>
+          <div class="pc-desc">Every node reads from and writes to <code>ArticleGenerationState</code> only. No global variables, no side-channel communication between agents.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 02</div>
+          <div class="pc-title">Append-Only Error Reducer</div>
+          <div class="pc-desc"><code>errors: Annotated[List[str], operator.add]</code> — any node can log failures without erasing previous errors from other nodes.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 03</div>
+          <div class="pc-title">Independent Per-Node Retry Budgets</div>
+          <div class="pc-desc"><code>retry_counts["research/outline/writer/qa"]</code> — each agent fails independently. One node retrying doesn't penalise another node's budget.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 04</div>
+          <div class="pc-title">QA Revision Loop with Hard Ceiling</div>
+          <div class="pc-desc"><code>max_revisions = 3</code>. After that, publish best-effort. Prevents infinite writer↔QA cycles that could run forever on marginal content.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 05</div>
+          <div class="pc-title">Pydantic Validators as Safety Nets</div>
+          <div class="pc-desc"><code>SeoMetadata</code> auto-truncates over-length strings. <code>QAResult</code> score is range-clamped. No crashes on LLM output drift or hallucination.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 06</div>
+          <div class="pc-title">Sequential Writer, Not ReAct</div>
+          <div class="pc-desc">Direct tool calls: <code>article_writer → linking_tool → metadata_generator</code>. Deterministic section generation — agent loop adds no value and risks ordering bugs.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 07</div>
+          <div class="pc-title">SSE + asyncio.to_thread</div>
+          <div class="pc-desc">Graph runs in a thread pool. Event loop stays free. Connected browsers see live logs while pipeline runs — zero blocking.</div>
+        </div>
+        <div class="principle-card">
+          <div class="pc-num">Principle 08</div>
+          <div class="pc-title">Two DB Layers, One Database</div>
+          <div class="pc-desc">SQLAlchemy ORM owns job/article records. PostgresSaver owns checkpoint blobs. Same Postgres instance, cleanly separated concerns.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <div class="download-section">
+      <h3>Full Architecture Specification</h3>
+      <p>Download the complete technical document — all diagrams, decision tables, and API specifications in Markdown format.</p>
+      <a href="/seo-article-generation/SEO_Agent_Architecture.md" download="SEO_Agent_Architecture.md" class="btn-download">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download Architecture Doc
+      </a>
+      <a href="/seo-article-generation/index.html" class="btn-outline">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Launch Demo
+      </a>
+    </div>
+
+  </div><!-- /page-wrap -->
+
+  <script>
+    // ── Theme ─────────────────────────────────────────────────────────────────
+    const html = document.documentElement;
+    const iconMoon = document.getElementById('icon-moon');
+    const iconSun  = document.getElementById('icon-sun');
+
+    function applyTheme(t) {
+      html.setAttribute('data-theme', t);
+      // show Moon when light (click to go dark), show Sun when dark (click to go light)
+      iconMoon.style.display = t === 'light' ? '' : 'none';
+      iconSun.style.display  = t === 'dark'  ? '' : 'none';
+      localStorage.setItem('theme', t);   // same key as main page
+    }
+
+    function toggleTheme() {
+      applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    }
+
+    // init from saved or system preference
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(saved === 'light' ? 'light' : saved === 'dark' ? 'dark' : prefersDark ? 'dark' : 'light');
+
+    // ── Smooth scroll ─────────────────────────────────────────────────────────
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const el = document.querySelector(a.getAttribute('href'));
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>

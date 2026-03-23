@@ -9,6 +9,7 @@ const demos = [
     icon: "✍️",
     gradient: "from-purple-500 to-pink-500",
     href: "/seo-article-generation/index.html",
+    docsHref: "/seo-article-generation/docs.html",
     status: "live" as const,
   },
   {
@@ -83,37 +84,60 @@ export function DemoGrid() {
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
     >
       {demos.map((demo, index) => (
-        <motion.a
+        <motion.div
           key={index}
           variants={item}
-          href={demo.href}
-          onClick={(e) => {
-            if (demo.status === "soon") {
-              e.preventDefault();
-              alert("This demo is coming soon! Stay tuned for updates.");
-            }
-          }}
-          className={`demo-card group relative p-6 rounded-2xl border bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${
-            demo.status === "soon" ? "opacity-70 cursor-not-allowed" : ""
+          className={`demo-card group relative p-6 rounded-2xl border bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col ${
+            demo.status === "soon" ? "opacity-70" : ""
           }`}
         >
-          <span
-            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold ${
-              demo.status === "live"
-                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-                : "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-            }`}
-          >
-            {demo.status === "live" ? "Live" : "Coming Soon"}
-          </span>
-          <div
-            className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${demo.gradient} mb-4 text-2xl`}
-          >
-            {demo.icon}
+          {/* Gradient banner with icon + title */}
+          <div className={`relative rounded-xl bg-gradient-to-br ${demo.gradient} mb-4 flex flex-col items-center justify-center gap-2 py-5 px-4 overflow-hidden`}>
+            <span className="text-2xl">{demo.icon}</span>
+            <h3 className="text-base font-bold text-white text-center leading-tight">{demo.title}</h3>
+            <span
+              className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                demo.status === "live"
+                  ? "bg-green-500/90 text-white"
+                  : "bg-amber-500/90 text-white"
+              }`}
+            >
+              {demo.status === "live" ? "Live" : "Soon"}
+            </span>
           </div>
-          <h3 className="text-xl font-semibold mb-2">{demo.title}</h3>
-          <p className="text-muted-foreground">{demo.description}</p>
-        </motion.a>
+
+          <p className="text-muted-foreground flex-1 text-sm">{demo.description}</p>
+
+          <div className="mt-5 flex gap-2">
+            {demo.status === "live" ? (
+              <>
+                <a
+                  href={demo.href}
+                  className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity"
+                >
+                  Launch →
+                </a>
+                {"docsHref" in demo && (
+                  <a
+                    href={(demo as typeof demo & { docsHref: string }).docsHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-semibold border border-purple-500/40 text-purple-500 hover:bg-purple-500/10 transition-colors"
+                  >
+                    Read
+                  </a>
+                )}
+              </>
+            ) : (
+              <button
+                disabled
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold border border-border text-muted-foreground cursor-not-allowed"
+              >
+                Coming Soon
+              </button>
+            )}
+          </div>
+        </motion.div>
       ))}
     </motion.div>
   );
