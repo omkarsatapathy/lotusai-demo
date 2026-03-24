@@ -6,7 +6,7 @@ const demos = [
     title: "SEO Article Generation",
     description:
       "Multi-agent pipeline that researches, outlines, writes, and validates SEO-optimized articles with real-time quality scoring.",
-    icon: "✍️",
+    icon: "/multi-agent.png",
     gradient: "from-purple-500 to-pink-500",
     href: "/seo-article-generation/index.html",
     docsHref: "/seo-article-generation/docs.html",
@@ -16,7 +16,7 @@ const demos = [
     title: "AI Podcast Generator",
     description:
       "Autonomous 5-phase LangGraph pipeline that researches, scripts, voices, and masters full podcast episodes from any topic.",
-    icon: "🎙️",
+    icon: "/podcast.png",
     gradient: "from-blue-500 to-cyan-500",
     href: "#",
     docsHref: "/ai-podcast-generator/docs.html",
@@ -27,7 +27,7 @@ const demos = [
     title: "Daily News Update via Telegram",
     description:
       "Autonomous pipeline that researches breaking news, generates a multi-speaker audio briefing, and delivers it straight to your Telegram — daily, hands-free.",
-    icon: "📰",
+    icon: "/Telegram_logo.png",
     gradient: "from-violet-500 to-purple-700",
     href: "#",
     docsHref: "/podcast-creator/docs.html",
@@ -557,7 +557,21 @@ export function DemoGrid() {
               <div
                 className={`relative rounded-xl bg-gradient-to-br ${demo.gradient} mb-4 flex flex-col items-center justify-center gap-2 py-5 px-4 overflow-hidden`}
               >
-                <span className="text-2xl">{demo.icon}</span>
+                {demo.icon.startsWith("/") ? (
+                  <img
+                    src={demo.icon}
+                    alt=""
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "2px solid rgba(255,255,255,0.3)",
+                    }}
+                  />
+                ) : (
+                  <span className="text-2xl">{demo.icon}</span>
+                )}
                 <h3 className="text-base font-bold text-white text-center leading-tight">
                   {demo.title}
                 </h3>
