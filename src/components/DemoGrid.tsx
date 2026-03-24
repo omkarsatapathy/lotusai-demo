@@ -24,6 +24,17 @@ const demos = [
     status: "live" as const,
   },
   {
+    title: "Daily News Update via Telegram",
+    description:
+      "Autonomous pipeline that researches breaking news, generates a multi-speaker audio briefing, and delivers it straight to your Telegram — daily, hands-free.",
+    icon: "📰",
+    gradient: "from-violet-500 to-purple-700",
+    href: "#",
+    docsHref: "/podcast-creator/docs.html",
+    audioHref: "/podcast-creator/demo.mp3",
+    status: "live" as const,
+  },
+  {
     title: "E-commerce Optimizer",
     description:
       "Automated product description generator with attribute extraction, category classification, and metadata enrichment.",
