@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/omkarsatapaphy/python_works/Strands_Mcp/MCP&A2A/**)",
+      "Bash(grep -E \"\\\\.\\(html|css\\)$\")",
+      "Bash(grep -E \"\\\\.\\(html|astro|css|ts|js\\)$\")",
+      "Read(//Users/omkarsatapaphy/python_works/Strands_Mcp/MCP\\\\&A2A/a2a_protocol/**)",
+      "Read(//Users/omkarsatapaphy/python_works/Strands_Mcp/MCP\\\\&A2A/a2a_protocol/server/**)",
+      "Read(//Users/omkarsatapaphy/python_works/Strands_Mcp/**)",
+      "Bash(ls /Users/omkarsatapaphy/python_works/lotusai_demo/public/*.png /Users/omkarsatapaphy/python_works/lotusai_demo/public/*.svg)",
+      "Bash(ls /Users/omkarsatapaphy/python_works/lotusai_demo/public/*.png)",
+      "Bash(sips -s format png mcp-a2a-icon.svg --out mcp-a2a-icon.png)",
+      "Bash(rsvg-convert mcp-a2a-icon.svg -o mcp-a2a-icon.png)",
+      "Read(//Users/omkarsatapaphy/Downloads/**)",
+      "Bash(xargs cat:*)",
+      "Bash(wc -l \"/Users/omkarsatapaphy/python_works/Strands_Mcp/MCP&A2A/a2a_protocol/server\"/*.py \"/Users/omkarsatapaphy/python_works/Strands_Mcp/MCP&A2A/a2a_protocol/pipeline\"/*.py)"
+    ],
+    "additionalDirectories": [
+      "/Users/omkarsatapaphy/Downloads"
+    ]
+  }
+}

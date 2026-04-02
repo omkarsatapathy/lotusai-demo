@@ -35,13 +35,15 @@ const demos = [
     status: "live" as const,
   },
   {
-    title: "E-commerce Optimizer",
+    title: "MCP & A2A Agent Orchestration",
     description:
-      "Automated product description generator with attribute extraction, category classification, and metadata enrichment.",
-    icon: "🛍️",
-    gradient: "from-green-500 to-emerald-500",
+      "Two complementary agent interoperability patterns on AWS Bedrock AgentCore — an A2A research agent with a LangGraph pipeline and an MCP fashion tool server with dynamic discovery.",
+    icon: "/mcp-a2a-icon.png",
+    gradient: "from-amber-500 to-orange-500",
     href: "#",
-    status: "soon" as const,
+    docsHref: "/mcp-a2a-orchestration/docs.html",
+    docsOnly: true,
+    status: "live" as const,
   },
   {
     title: "Conversational AI Agent",
@@ -593,7 +595,18 @@ export function DemoGrid() {
               <div className="mt-5 flex gap-2">
                 {demo.status === "live" ? (
                   <>
-                    {hasAudio ? (
+                    {"docsOnly" in demo && (demo as any).docsOnly ? (
+                      <a
+                        href={
+                          (demo as typeof demo & { docsHref: string }).docsHref
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 text-center px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity"
+                      >
+                        Read Deep Dive &rarr;
+                      </a>
+                    ) : hasAudio ? (
                       <button
                         onClick={() =>
                           openPlayer(
@@ -613,7 +626,7 @@ export function DemoGrid() {
                         Launch &rarr;
                       </a>
                     )}
-                    {"docsHref" in demo && (
+                    {!("docsOnly" in demo && (demo as any).docsOnly) && "docsHref" in demo && (
                       <a
                         href={
                           (demo as typeof demo & { docsHref: string }).docsHref
